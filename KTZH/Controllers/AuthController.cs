@@ -16,10 +16,6 @@ public class AuthController : ControllerBase
 {
     private readonly IConfiguration _config;
 
-    // Единственный пользователь — диспетчер КТЖ
-    private const string ValidLogin = "dispatcher";
-    private const string ValidPassword = "Ktz2024!";
-
     public AuthController(IConfiguration config)
     {
         _config = config;
@@ -33,7 +29,10 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<LoginResponse> Login([FromBody] LoginRequest request)
     {
-        if (request.Login != ValidLogin || request.Password != ValidPassword)
+        var validLogin = _config["Auth:Login"] ?? "dispatcher";
+        var validPassword = _config["Auth:Password"] ?? "Ktz2024!";
+
+        if (request.Login != validLogin || request.Password != validPassword)
         {
             return Unauthorized(new { message = "Неверный логин или пароль" });
         }
