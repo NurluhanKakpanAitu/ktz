@@ -1,0 +1,47 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import {
+  LocomotiveDto,
+  LocomotiveDetailDto,
+  HealthScore,
+  Alert
+} from '../models/telemetry.models';
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+
+  private readonly base = '/api';
+
+  constructor(private http: HttpClient) {}
+
+  /** Список всех 10 локомотивов */
+  getLocomotives(): Observable<LocomotiveDto[]> {
+    return this.http.get<LocomotiveDto[]>(`${this.base}/locomotives`);
+  }
+
+  /** Детали локомотива с телеметрией и health */
+  getLocomotive(id: string): Observable<LocomotiveDetailDto> {
+    return this.http.get<LocomotiveDetailDto>(`${this.base}/locomotives/${id}`);
+  }
+
+  /** История телеметрии */
+  getHistory(id: string, hours: number = 1): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/locomotives/${id}/history?hours=${hours}`);
+  }
+
+  /** Health Score с расшифровкой */
+  getHealth(id: string): Observable<HealthScore> {
+    return this.http.get<HealthScore>(`${this.base}/locomotives/${id}/health`);
+  }
+
+  /** Активные алерты */
+  getAlerts(active: boolean = true): Observable<Alert[]> {
+    return this.http.get<Alert[]>(`${this.base}/alerts?active=${active}`);
+  }
+
+  /** Healthcheck */
+  getServiceHealth(): Observable<{ status: string; locomotivesCount: number; timestamp: string }> {
+    return this.http.get<any>(`${this.base}/health`);
+  }
+}
