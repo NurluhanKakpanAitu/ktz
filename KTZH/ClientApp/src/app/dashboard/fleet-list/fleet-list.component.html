@@ -1,3 +1,40 @@
+<div class="fleet-controls">
+  <div class="search-box">
+    <input
+      type="text"
+      [(ngModel)]="searchQuery"
+      placeholder="Поиск по имени, маршруту, депо..."
+    />
+    <button class="clear-btn" *ngIf="searchQuery" (click)="searchQuery = ''">&times;</button>
+  </div>
+  <div class="filters">
+    <div class="filter-wrap">
+      <select [(ngModel)]="filterType">
+        <option value="">Все типы</option>
+        <option value="TE33A">ТЭ33А (тепловоз)</option>
+        <option value="KZ8A">KZ8A (электровоз)</option>
+      </select>
+      <button class="clear-btn" *ngIf="filterType" (click)="filterType = ''">&times;</button>
+    </div>
+    <div class="filter-wrap">
+      <select [(ngModel)]="filterGrade">
+        <option value="">Все грейды</option>
+        <option value="A">A — Отличное</option>
+        <option value="B">B — Хорошее</option>
+        <option value="C">C — Внимание</option>
+        <option value="D">D — Риск</option>
+        <option value="E">E — Критическое</option>
+      </select>
+      <button class="clear-btn" *ngIf="filterGrade" (click)="filterGrade = ''">&times;</button>
+    </div>
+    <select [(ngModel)]="sortBy">
+      <option value="name">По имени</option>
+      <option value="health">По здоровью</option>
+      <option value="grade">По грейду</option>
+    </select>
+  </div>
+</div>
+
 <div class="fleet-table-wrap">
   <table class="fleet-table">
     <thead>
@@ -10,9 +47,9 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let loco of locomotives" (click)="goTo(loco.id)" class="fleet-row">
+      <tr *ngFor="let loco of filtered" (click)="goTo(loco.id)" class="fleet-row">
         <td class="loco-name">{{ loco.name }}</td>
-        <td>{{ loco.type }}</td>
+        <td><span class="type-tag" [class.diesel]="loco.type === 'TE33A'">{{ loco.type === 'TE33A' ? 'ТЭ33А' : 'KZ8A' }}</span></td>
         <td>{{ loco.depotCity }}</td>
         <td>{{ loco.route }}</td>
         <td>
@@ -23,4 +60,7 @@
       </tr>
     </tbody>
   </table>
+  <div class="no-results" *ngIf="filtered.length === 0">
+    Ничего не найдено
+  </div>
 </div>

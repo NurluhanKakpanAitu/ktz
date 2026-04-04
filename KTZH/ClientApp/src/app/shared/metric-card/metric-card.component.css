@@ -1,0 +1,124 @@
+.metric-card {
+  background: #1e2d42;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.metric-card.status-warning {
+  background: rgba(245, 158, 11, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25);
+}
+
+.metric-card.status-critical {
+  background: rgba(239, 68, 68, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.3);
+  animation: pulse-card 1.5s ease-in-out infinite;
+}
+
+.metric-icon {
+  font-size: 24px;
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.metric-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.2;
+}
+
+.status-warning .metric-value {
+  color: #f59e0b;
+}
+
+.status-critical .metric-value {
+  color: #ef4444;
+}
+
+.metric-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: #64748b;
+  margin-left: 2px;
+}
+
+/* Status dot (top-right corner) */
+.status-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-normal {
+  background: #22c55e;
+}
+
+.dot-warning {
+  background: #f59e0b;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.dot-critical {
+  background: #ef4444;
+  animation: pulse-dot 0.8s ease-in-out infinite;
+}
+
+/* Status bar (bottom) */
+.status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.bar-normal {
+  background: #22c55e;
+}
+
+.bar-warning {
+  background: #f59e0b;
+}
+
+.bar-critical {
+  background: #ef4444;
+}
+
+@keyframes pulse-card {
+  0%, 100% { background: rgba(239, 68, 68, 0.14); }
+  50% { background: rgba(239, 68, 68, 0.06); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}

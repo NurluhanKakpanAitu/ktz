@@ -1,0 +1,12 @@
+<div class="metric-card" [ngClass]="'status-' + status">
+  <div class="metric-icon">{{ icon }}</div>
+  <div class="metric-info">
+    <span class="metric-label">{{ title }}</span>
+    <span class="metric-value">
+      {{ value | number:format }}
+      <span class="metric-unit">{{ unit }}</span>
+    </span>
+  </div>
+  <div class="status-dot" [ngClass]="'dot-' + status"></div>
+  <div class="status-bar" [ngClass]="'bar-' + status"></div>
+</div>

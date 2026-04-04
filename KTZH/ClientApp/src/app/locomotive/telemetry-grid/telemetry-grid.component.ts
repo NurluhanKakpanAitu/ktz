@@ -1,11 +1,12 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { TelemetrySnapshot } from '../../models/telemetry.models';
+import { MetricStatus } from '../../shared/metric-card/metric-card.component';
 
-interface MetricCard {
+interface CardDef {
   label: string;
   value: number;
   unit: string;
-  status: 'normal' | 'warning' | 'critical';
+  status: MetricStatus;
   icon: string;
 }
 
@@ -37,7 +38,7 @@ export class TelemetryGridComponent implements OnChanges {
   @Input() snapshot!: TelemetrySnapshot;
   @Input() locomotiveType: string = 'TE33A';
 
-  cards: MetricCard[] = [];
+  cards: CardDef[] = [];
 
   ngOnChanges(): void {
     if (!this.snapshot) return;
@@ -46,7 +47,7 @@ export class TelemetryGridComponent implements OnChanges {
       : this.buildKZ8A();
   }
 
-  private buildTE33A(): MetricCard[] {
+  private buildTE33A(): CardDef[] {
     const s = this.snapshot;
     return [
       this.card('Скорость',           s.speed,                    'км/ч', 'speed',              '⚡'),
@@ -60,7 +61,7 @@ export class TelemetryGridComponent implements OnChanges {
     ];
   }
 
-  private buildKZ8A(): MetricCard[] {
+  private buildKZ8A(): CardDef[] {
     const s = this.snapshot;
     return [
       this.card('Скорость',           s.speed,                        'км/ч', 'speed',                    '⚡'),
@@ -72,11 +73,11 @@ export class TelemetryGridComponent implements OnChanges {
     ];
   }
 
-  private card(label: string, value: number, unit: string, thresholdKey: string, icon: string): MetricCard {
+  private card(label: string, value: number, unit: string, thresholdKey: string, icon: string): CardDef {
     return { label, value, unit, icon, status: this.getStatus(value, thresholdKey) };
   }
 
-  private getStatus(value: number, key: string): 'normal' | 'warning' | 'critical' {
+  private getStatus(value: number, key: string): MetricStatus {
     const t = THRESHOLDS[key];
     if (!t) return 'normal';
 

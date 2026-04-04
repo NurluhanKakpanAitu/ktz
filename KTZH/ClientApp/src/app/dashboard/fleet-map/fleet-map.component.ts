@@ -14,7 +14,6 @@ const GRADE_COLORS: Record<string, string> = {
   E: '#ef4444'
 };
 
-/** Создать DivIcon: иконка поезда с цветным кольцом статуса */
 function createTrainIcon(color: string): L.DivIcon {
   return L.divIcon({
     className: 'train-marker',
@@ -38,6 +37,16 @@ function createTrainIcon(color: string): L.DivIcon {
   });
 }
 
+interface MarkerData {
+  id: string;
+  name: string;
+  type: string;
+  depotCity: string;
+  route: string;
+  grade: string;
+  score: number;
+}
+
 @Component({
   selector: 'app-fleet-map',
   templateUrl: './fleet-map.component.html',
@@ -45,8 +54,13 @@ function createTrainIcon(color: string): L.DivIcon {
 })
 export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
+  searchQuery = '';
+  filterType = '';
+  filterGrade = '';
+
   private map!: L.Map;
   private markers = new Map<string, L.Marker>();
+  private markerData = new Map<string, MarkerData>();
   private fleetSub?: Subscription;
 
   constructor(
@@ -67,6 +81,34 @@ export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.fleetSub?.unsubscribe();
+  }
+
+  applyFilters(): void {
+    this.markers.forEach((marker, id) => {
+      const data = this.markerData.get(id);
+      if (!data) return;
+
+      const visible = this.matchesFilter(data);
+      if (visible) {
+        if (!this.map.hasLayer(marker)) marker.addTo(this.map);
+      } else {
+        if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
+      }
+    });
+  }
+
+  private matchesFilter(data: MarkerData): boolean {
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase();
+      const match = data.name.toLowerCase().includes(q) ||
+        data.route.toLowerCase().includes(q) ||
+        data.depotCity.toLowerCase().includes(q) ||
+        data.id.toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    if (this.filterType && data.type !== this.filterType) return false;
+    if (this.filterGrade && data.grade !== this.filterGrade) return false;
+    return true;
   }
 
   private initMap(): void {
@@ -90,16 +132,20 @@ export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private subscribeToFleet(): void {
     this.fleetSub = this.telemetry.fleet$.subscribe(fleet => {
-      fleet.forEach(state => {
-        this.upsertMarkerFromState(state);
-      });
+      fleet.forEach(state => this.upsertMarkerFromState(state));
     });
   }
 
   private upsertMarker(loco: LocomotiveDto): void {
     const color = GRADE_COLORS[loco.healthGrade] || '#6b7280';
-    const existing = this.markers.get(loco.id);
+    const data: MarkerData = {
+      id: loco.id, name: loco.name, type: loco.type,
+      depotCity: loco.depotCity, route: loco.route,
+      grade: loco.healthGrade, score: loco.healthScore
+    };
+    this.markerData.set(loco.id, data);
 
+    const existing = this.markers.get(loco.id);
     if (existing) {
       existing.setLatLng([loco.latitude, loco.longitude]);
       existing.setIcon(createTrainIcon(color));
@@ -107,14 +153,13 @@ export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       const marker = L.marker([loco.latitude, loco.longitude], {
         icon: createTrainIcon(color)
-      }).addTo(this.map);
-
-      marker.bindPopup(this.popupHtml(loco.name, loco.route, loco.healthScore, loco.healthGrade));
-      marker.on('click', () => {
-        this.router.navigate(['/locomotive', loco.id]);
       });
 
+      marker.bindPopup(this.popupHtml(loco.name, loco.route, loco.healthScore, loco.healthGrade));
+      marker.on('click', () => this.router.navigate(['/locomotive', loco.id]));
+
       this.markers.set(loco.id, marker);
+      if (this.matchesFilter(data)) marker.addTo(this.map);
     }
   }
 
@@ -122,23 +167,33 @@ export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
     const loco = state.locomotive;
     const health = state.lastHealth;
     const color = GRADE_COLORS[health.grade] || '#6b7280';
-    const existing = this.markers.get(loco.id);
 
+    const data: MarkerData = {
+      id: loco.id, name: loco.name, type: loco.type,
+      depotCity: loco.depotCity || '', route: loco.currentRoute,
+      grade: health.grade, score: health.score
+    };
+    this.markerData.set(loco.id, data);
+
+    const existing = this.markers.get(loco.id);
     if (existing) {
       existing.setLatLng([loco.latitude, loco.longitude]);
       existing.setIcon(createTrainIcon(color));
       existing.setPopupContent(this.popupHtml(loco.name, loco.currentRoute, health.score, health.grade));
+
+      const visible = this.matchesFilter(data);
+      if (visible && !this.map.hasLayer(existing)) existing.addTo(this.map);
+      if (!visible && this.map.hasLayer(existing)) this.map.removeLayer(existing);
     } else {
       const marker = L.marker([loco.latitude, loco.longitude], {
         icon: createTrainIcon(color)
-      }).addTo(this.map);
-
-      marker.bindPopup(this.popupHtml(loco.name, loco.currentRoute, health.score, health.grade));
-      marker.on('click', () => {
-        this.router.navigate(['/locomotive', loco.id]);
       });
 
+      marker.bindPopup(this.popupHtml(loco.name, loco.currentRoute, health.score, health.grade));
+      marker.on('click', () => this.router.navigate(['/locomotive', loco.id]));
+
       this.markers.set(loco.id, marker);
+      if (this.matchesFilter(data)) marker.addTo(this.map);
     }
   }
 

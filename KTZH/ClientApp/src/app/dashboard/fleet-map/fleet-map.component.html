@@ -1,1 +1,35 @@
-<div id="fleet-map" class="fleet-map"></div>
+<div class="map-wrapper">
+  <div class="map-controls">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="applyFilters()"
+        placeholder="Поиск по имени, маршруту, депо..."
+      />
+      <button class="clear-btn" *ngIf="searchQuery" (click)="searchQuery = ''; applyFilters()">&times;</button>
+    </div>
+    <div class="filters">
+      <div class="filter-wrap">
+        <select [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+          <option value="">Все типы</option>
+          <option value="TE33A">ТЭ33А (тепловоз)</option>
+          <option value="KZ8A">KZ8A (электровоз)</option>
+        </select>
+        <button class="clear-btn" *ngIf="filterType" (click)="filterType = ''; applyFilters()">&times;</button>
+      </div>
+      <div class="filter-wrap">
+        <select [(ngModel)]="filterGrade" (ngModelChange)="applyFilters()">
+          <option value="">Все грейды</option>
+          <option value="A">A — Отличное</option>
+          <option value="B">B — Хорошее</option>
+          <option value="C">C — Внимание</option>
+          <option value="D">D — Риск</option>
+          <option value="E">E — Критическое</option>
+        </select>
+        <button class="clear-btn" *ngIf="filterGrade" (click)="filterGrade = ''; applyFilters()">&times;</button>
+      </div>
+    </div>
+  </div>
+  <div id="fleet-map" class="fleet-map"></div>
+</div>
