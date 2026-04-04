@@ -1,10 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using KTZH.Data;
+using KTZH.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllersWithViews();
 
+// SQLite через EF Core
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+
+// Фоновый сервис очистки истории (каждый час удаляет записи старше 24ч)
+builder.Services.AddHostedService<HistoryCleanupService>();
+
 var app = builder.Build();
+
+// Создать БД при старте
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
