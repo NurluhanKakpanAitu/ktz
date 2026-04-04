@@ -90,8 +90,9 @@ public class TelemetrySimulatorService : BackgroundService
                 .SendAsync("ReceiveTelemetry", snapshot, ct);
         }
 
-        // Сохраняем в SQLite
-        await SaveToDatabase(snapshots, ct);
+        // Сохраняем в SQLite каждые 5 секунд (не каждый тик — снижаем нагрузку на БД)
+        if (_tickCount % 5 == 0)
+            await SaveToDatabase(snapshots, ct);
 
         // Каждые 5 секунд — fleet update
         if (_tickCount % 5 == 0)

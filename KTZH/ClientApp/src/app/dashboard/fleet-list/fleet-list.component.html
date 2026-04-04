@@ -1,0 +1,26 @@
+<div class="fleet-table-wrap">
+  <table class="fleet-table">
+    <thead>
+      <tr>
+        <th>Локомотив</th>
+        <th>Тип</th>
+        <th>Депо</th>
+        <th>Маршрут</th>
+        <th>Health</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let loco of locomotives" (click)="goTo(loco.id)" class="fleet-row">
+        <td class="loco-name">{{ loco.name }}</td>
+        <td>{{ loco.type }}</td>
+        <td>{{ loco.depotCity }}</td>
+        <td>{{ loco.route }}</td>
+        <td>
+          <span class="grade-badge" [style.background]="gradeColor(loco.healthGrade)">
+            {{ loco.healthScore }} {{ loco.healthGrade }}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

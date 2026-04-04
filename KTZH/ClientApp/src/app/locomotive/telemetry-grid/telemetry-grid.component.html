@@ -1,0 +1,17 @@
+<div class="telemetry-grid">
+  <div
+    *ngFor="let card of cards"
+    class="metric-card"
+    [ngClass]="'status-' + card.status"
+  >
+    <div class="metric-icon">{{ card.icon }}</div>
+    <div class="metric-info">
+      <span class="metric-label">{{ card.label }}</span>
+      <span class="metric-value">
+        {{ card.value | number:'1.1-1' }}
+        <span class="metric-unit">{{ card.unit }}</span>
+      </span>
+    </div>
+    <div class="status-bar" [ngClass]="'bar-' + card.status"></div>
+  </div>
+</div>

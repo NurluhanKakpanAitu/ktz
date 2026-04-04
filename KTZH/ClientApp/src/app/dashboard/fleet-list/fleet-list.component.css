@@ -1,0 +1,46 @@
+.fleet-table-wrap {
+  overflow-x: auto;
+}
+
+.fleet-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fleet-table th {
+  text-align: left;
+  font-size: 12px;
+  color: #64748b;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2a3a50;
+  font-weight: 600;
+}
+
+.fleet-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #f1f5f9;
+  border-bottom: 1px solid #1e2d42;
+}
+
+.fleet-row {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fleet-row:hover {
+  background: #1e2d42;
+}
+
+.loco-name {
+  font-weight: 600;
+}
+
+.grade-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f1724;
+}

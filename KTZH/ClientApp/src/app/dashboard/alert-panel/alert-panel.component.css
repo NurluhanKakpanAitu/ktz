@@ -1,0 +1,131 @@
+.alert-panel {
+  background: #1a2535;
+  border-radius: 8px;
+  padding: 12px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #2a3a50;
+}
+
+.alert-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.alert-counts {
+  display: flex;
+  gap: 8px;
+}
+
+.count-critical {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.count-warning {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.alert-list {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  background: #1e2d42;
+}
+
+.alert-item:hover {
+  background: #253b55;
+}
+
+.alert-item.severity-critical {
+  border-left: 3px solid #ef4444;
+  animation: blink-critical 1.5s ease-in-out infinite;
+}
+
+.alert-item.severity-warning {
+  border-left: 3px solid #f59e0b;
+}
+
+.alert-item.severity-info {
+  border-left: 3px solid #3b82f6;
+}
+
+.alert-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.alert-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert-loco {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.alert-time {
+  font-size: 10px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.alert-message {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-alerts {
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+@keyframes blink-critical {
+  0%, 100% { background: #1e2d42; }
+  50% { background: rgba(239, 68, 68, 0.12); }
+}

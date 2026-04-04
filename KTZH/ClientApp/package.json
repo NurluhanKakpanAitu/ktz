@@ -26,6 +26,7 @@
     "@microsoft/signalr": "^10.0.0",
     "@types/leaflet": "^1.9.21",
     "bootstrap": "^5.2.3",
+    "chart.js": "^4.5.1",
     "jquery": "^3.6.4",
     "leaflet": "^1.9.4",
     "oidc-client": "^1.11.5",

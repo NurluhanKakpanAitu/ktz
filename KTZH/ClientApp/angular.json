@@ -26,7 +26,8 @@
             "allowedCommonJsDependencies": [
               "oidc-client",
               "@microsoft/signalr",
-              "leaflet"
+              "leaflet",
+              "chart.js"
             ],
             "assets": [
               "src/assets"

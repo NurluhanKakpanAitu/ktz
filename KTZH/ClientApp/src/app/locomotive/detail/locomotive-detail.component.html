@@ -1,0 +1,53 @@
+<div class="loco-detail" *ngIf="detail">
+  <!-- Header -->
+  <header class="detail-header">
+    <button class="back-btn" (click)="goBack()">← Назад</button>
+    <div class="header-info">
+      <h2 class="loco-name">{{ detail.name }}</h2>
+      <span class="loco-type">{{ typeName() }}</span>
+      <span class="loco-route">{{ detail.route }}</span>
+      <span class="loco-depot">Депо: {{ detail.depotCity }}</span>
+    </div>
+    <div class="header-health" *ngIf="health">
+      <app-health-gauge [score]="health.score" [grade]="health.grade"></app-health-gauge>
+    </div>
+  </header>
+
+  <!-- Health Breakdown -->
+  <section class="section" *ngIf="componentList.length > 0">
+    <h3 class="section-title">Расшифровка Health Score</h3>
+    <div class="component-list">
+      <div *ngFor="let c of componentList" class="component-row">
+        <span class="comp-name">{{ c.name }}</span>
+        <div class="comp-bar-track">
+          <div class="comp-bar-fill" [style.width]="barWidth(c.score)" [style.background]="barColor(c.score)"></div>
+        </div>
+        <span class="comp-score" [style.color]="barColor(c.score)">{{ c.score }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Telemetry Cards -->
+  <section class="section" *ngIf="snapshot">
+    <h3 class="section-title">Телеметрия</h3>
+    <app-telemetry-grid [snapshot]="snapshot" [locomotiveType]="detail.type"></app-telemetry-grid>
+  </section>
+
+  <!-- Trend Charts -->
+  <section class="section" *ngIf="snapshot">
+    <h3 class="section-title">Тренды (последняя минута)</h3>
+    <app-trend-charts [snapshot]="snapshot" [locomotiveType]="detail.type"></app-trend-charts>
+  </section>
+
+  <!-- Alerts -->
+  <section class="section" *ngIf="alerts.length > 0">
+    <h3 class="section-title">Алерты за сессию</h3>
+    <div class="alert-history">
+      <div *ngFor="let a of alerts" class="alert-row" [ngClass]="'sev-' + a.severity.toLowerCase()">
+        <span class="alert-sev">{{ a.severity === 'Critical' ? '🔴' : '🟠' }}</span>
+        <span class="alert-param">{{ a.parameter }}</span>
+        <span class="alert-time">{{ a.triggeredAt | date:'HH:mm:ss' }}</span>
+      </div>
+    </div>
+  </section>
+</div>
