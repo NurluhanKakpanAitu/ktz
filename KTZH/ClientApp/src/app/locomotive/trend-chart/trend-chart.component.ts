@@ -96,6 +96,33 @@ export class TrendChartComponent implements AfterViewInit, OnChanges, OnDestroy 
       });
     }
 
+    // Plugin для пороговых линий (warning/critical)
+    const thresholdPlugin = {
+      id: 'thresholdLines',
+      afterDraw: (chart: Chart) => {
+        if (annotations.length === 0) return;
+        const ctx = chart.ctx;
+        const yScale = chart.scales['y'];
+        const xScale = chart.scales['x'];
+        if (!yScale || !xScale) return;
+
+        annotations.forEach((ann: any) => {
+          const yPixel = yScale.getPixelForValue(ann.yMin);
+          if (yPixel == null) return;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.setLineDash(ann.borderDash || []);
+          ctx.strokeStyle = ann.borderColor;
+          ctx.lineWidth = ann.borderWidth;
+          ctx.moveTo(xScale.left, yPixel);
+          ctx.lineTo(xScale.right, yPixel);
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
+    };
+
     const cfg: ChartConfiguration = {
       type: 'line',
       data: {
@@ -142,37 +169,10 @@ export class TrendChartComponent implements AfterViewInit, OnChanges, OnDestroy 
             grid: { color: '#1e2d4260' }
           }
         }
-      }
+      },
+      plugins: [thresholdPlugin]
     };
 
     this.chart = new Chart(this.canvasRef.nativeElement, cfg);
-
-    // Рисуем пороговые линии вручную через plugin (без chart.js-plugin-annotation)
-    if (annotations.length > 0) {
-      this.chart.config.plugins = [{
-        id: 'thresholdLines',
-        afterDraw: (chart: Chart) => {
-          const ctx = chart.ctx;
-          const yScale = chart.scales['y'];
-          const xScale = chart.scales['x'];
-          if (!yScale || !xScale) return;
-
-          annotations.forEach((ann: any) => {
-            const yPixel = yScale.getPixelForValue(ann.yMin);
-            if (yPixel == null) return;
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.setLineDash(ann.borderDash || []);
-            ctx.strokeStyle = ann.borderColor;
-            ctx.lineWidth = ann.borderWidth;
-            ctx.moveTo(xScale.left, yPixel);
-            ctx.lineTo(xScale.right, yPixel);
-            ctx.stroke();
-            ctx.restore();
-          });
-        }
-      }];
-    }
   }
 }

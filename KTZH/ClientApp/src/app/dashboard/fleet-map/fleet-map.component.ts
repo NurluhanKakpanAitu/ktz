@@ -14,6 +14,30 @@ const GRADE_COLORS: Record<string, string> = {
   E: '#ef4444'
 };
 
+/** Создать DivIcon: иконка поезда с цветным кольцом статуса */
+function createTrainIcon(color: string): L.DivIcon {
+  return L.divIcon({
+    className: 'train-marker',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -22],
+    html: `
+      <div style="
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        border: 3px solid ${color};
+        background: rgba(26, 37, 53, 0.0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 8px ${color}80;
+      ">
+        <img src="assets/train-icon.png" style="width: 22px; height: 22px;" />
+      </div>
+    `
+  });
+}
+
 @Component({
   selector: 'app-fleet-map',
   templateUrl: './fleet-map.component.html',
@@ -22,7 +46,7 @@ const GRADE_COLORS: Record<string, string> = {
 export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private map!: L.Map;
-  private markers = new Map<string, L.CircleMarker>();
+  private markers = new Map<string, L.Marker>();
   private fleetSub?: Subscription;
 
   constructor(
@@ -60,7 +84,6 @@ export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadInitialData(): void {
     this.api.getLocomotives().subscribe(locos => {
       locos.forEach(loco => this.upsertMarker(loco));
-      // Fix map rendering after DOM init
       setTimeout(() => this.map.invalidateSize(), 100);
     });
   }
@@ -79,16 +102,11 @@ export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (existing) {
       existing.setLatLng([loco.latitude, loco.longitude]);
-      existing.setStyle({ fillColor: color, color: color });
+      existing.setIcon(createTrainIcon(color));
       existing.setPopupContent(this.popupHtml(loco.name, loco.route, loco.healthScore, loco.healthGrade));
     } else {
-      const marker = L.circleMarker([loco.latitude, loco.longitude], {
-        radius: 10,
-        fillColor: color,
-        color: color,
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8
+      const marker = L.marker([loco.latitude, loco.longitude], {
+        icon: createTrainIcon(color)
       }).addTo(this.map);
 
       marker.bindPopup(this.popupHtml(loco.name, loco.route, loco.healthScore, loco.healthGrade));
@@ -108,16 +126,11 @@ export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (existing) {
       existing.setLatLng([loco.latitude, loco.longitude]);
-      existing.setStyle({ fillColor: color, color: color });
+      existing.setIcon(createTrainIcon(color));
       existing.setPopupContent(this.popupHtml(loco.name, loco.currentRoute, health.score, health.grade));
     } else {
-      const marker = L.circleMarker([loco.latitude, loco.longitude], {
-        radius: 10,
-        fillColor: color,
-        color: color,
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8
+      const marker = L.marker([loco.latitude, loco.longitude], {
+        icon: createTrainIcon(color)
       }).addTo(this.map);
 
       marker.bindPopup(this.popupHtml(loco.name, loco.currentRoute, health.score, health.grade));
@@ -134,7 +147,7 @@ export class FleetMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return `
       <div style="font-family: sans-serif; min-width: 160px;">
         <strong>${name}</strong><br>
-        <span style="color: #94a3b8;">${route}</span><br>
+        <span style="color: #666;">${route}</span><br>
         <span style="color: ${color}; font-weight: bold; font-size: 1.1em;">
           ${score} / ${grade}
         </span>

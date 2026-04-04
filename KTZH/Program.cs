@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using KTZH.Data;
@@ -16,8 +17,12 @@ try
 
     builder.Host.UseSerilog();
 
-    // Controllers + Swagger
-    builder.Services.AddControllersWithViews();
+    // Controllers + Swagger (enums как строки в JSON)
+    builder.Services.AddControllersWithViews()
+        .AddJsonOptions(opts =>
+        {
+            opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {
@@ -34,10 +39,13 @@ try
             options.IncludeXmlComments(xmlPath);
     });
 
-    // SignalR
+    // SignalR (enums как строки в JSON)
     builder.Services.AddSignalR(options =>
     {
         options.MaximumReceiveMessageSize = 102400;
+    }).AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
     // SQLite через EF Core
@@ -86,9 +94,8 @@ try
     if (!app.Environment.IsDevelopment())
     {
         app.UseHsts();
+        app.UseHttpsRedirection();
     }
-
-    app.UseHttpsRedirection();
     app.UseStaticFiles();
     app.UseRouting();
     app.UseCors("Angular");

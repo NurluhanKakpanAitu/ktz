@@ -34,10 +34,15 @@ public class AlertsController : ControllerBase
             query = query.Where(a => a.IsActive);
 
         var alerts = await query
-            .OrderByDescending(a => a.Severity)
-            .ThenByDescending(a => a.TriggeredAt)
+            .OrderByDescending(a => a.TriggeredAt)
             .Take(100)
             .ToListAsync();
+
+        // Сортировка по Severity в памяти (enum → string в SQLite не сортируется правильно)
+        alerts = alerts
+            .OrderByDescending(a => a.Severity)
+            .ThenByDescending(a => a.TriggeredAt)
+            .ToList();
 
         return Ok(alerts);
     }

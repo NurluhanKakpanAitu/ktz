@@ -1,18 +1,64 @@
-a.navbar-brand {
-  white-space: normal;
-  text-align: center;
-  word-break: break-all;
+.ktz-nav {
+  background: #0f1724;
+  border-bottom: 1px solid #1e2d42;
 }
 
-html {
+.ktz-nav-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 16px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ktz-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.ktz-logo {
+  background: #22c55e;
+  color: #0f1724;
+  font-weight: 800;
   font-size: 14px;
-}
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
 }
 
-.box-shadow {
-  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+.ktz-title {
+  color: #f1f5f9;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ktz-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.ktz-links a {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.ktz-links a:hover {
+  background: #1a2535;
+  color: #f1f5f9;
+}
+
+.ktz-links a.active {
+  background: #1e2d42;
+  color: #22c55e;
 }

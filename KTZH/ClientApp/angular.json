@@ -136,5 +136,8 @@
       }
     }
   },
-  "defaultProject": "KTZH"
+  "defaultProject": "KTZH",
+  "cli": {
+    "analytics": "5831dee8-0bcb-44dd-aff7-89c1e9ff471a"
+  }
 }

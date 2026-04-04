@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { TelemetryService } from '../../services/telemetry.service';
 import { ApiService } from '../../services/api.service';
 import { Alert } from '../../models/telemetry.models';
 
 const MAX_ALERTS = 20;
+const REFRESH_INTERVAL = 15_000; // обновлять список алертов каждые 15 сек
 
 @Component({
   selector: 'app-alert-panel',
@@ -19,6 +20,7 @@ export class AlertPanelComponent implements OnInit, OnDestroy {
   warningCount = 0;
 
   private alertSub?: Subscription;
+  private refreshSub?: Subscription;
 
   constructor(
     private telemetry: TelemetryService,
@@ -27,24 +29,35 @@ export class AlertPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Загрузить активные алерты из API
-    this.api.getAlerts(true).subscribe(alerts => {
-      this.alerts = alerts.slice(0, MAX_ALERTS);
-      this.updateCounts();
-    });
+    this.loadAlerts();
 
     // Подписаться на live алерты через SignalR
     this.alertSub = this.telemetry.alert$.subscribe(alert => {
+      // Убрать старый алерт с тем же locomotiveId+parameter (заменяем на свежий)
+      this.alerts = this.alerts.filter(a =>
+        !(a.locomotiveId === alert.locomotiveId && a.parameter === alert.parameter)
+      );
       this.alerts.unshift(alert);
       if (this.alerts.length > MAX_ALERTS) {
         this.alerts.pop();
       }
       this.updateCounts();
     });
+
+    // Периодически обновлять список из API (убираем деактивированные)
+    this.refreshSub = interval(REFRESH_INTERVAL).subscribe(() => this.loadAlerts());
   }
 
   ngOnDestroy(): void {
     this.alertSub?.unsubscribe();
+    this.refreshSub?.unsubscribe();
+  }
+
+  private loadAlerts(): void {
+    this.api.getAlerts(true).subscribe(alerts => {
+      this.alerts = alerts.slice(0, MAX_ALERTS);
+      this.updateCounts();
+    });
   }
 
   goToLocomotive(alert: Alert): void {
@@ -52,8 +65,10 @@ export class AlertPanelComponent implements OnInit, OnDestroy {
   }
 
   timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const sec = Math.floor(diff / 1000);
+    // Бэкенд отдаёт UTC — добавляем 'Z' если нет таймзоны
+    const utcStr = dateStr.endsWith('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z';
+    const diff = Date.now() - new Date(utcStr).getTime();
+    const sec = Math.max(0, Math.floor(diff / 1000));
     if (sec < 60) return `${sec}с назад`;
     const min = Math.floor(sec / 60);
     if (min < 60) return `${min}мин назад`;

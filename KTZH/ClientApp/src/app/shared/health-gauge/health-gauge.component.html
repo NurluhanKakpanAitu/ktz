@@ -1,28 +1,33 @@
 <div class="gauge-container">
-  <svg viewBox="0 0 200 120" class="gauge-svg">
-    <!-- Background arc (grey track) -->
-    <path
-      d="M 20 100 A 80 80 0 0 1 180 100"
+  <svg viewBox="0 0 200 140" class="gauge-svg">
+    <!-- Background arc (серая дорожка) -->
+    <circle
+      [attr.cx]="cx" [attr.cy]="cy" [attr.r]="r"
       fill="none"
       stroke="#2a3a50"
-      stroke-width="12"
+      stroke-width="14"
       stroke-linecap="round"
+      [attr.stroke-dasharray]="bgDash"
+      transform="rotate(180, 100, 100)"
     />
-    <!-- Value arc -->
-    <path
-      [attr.d]="arcPath"
+    <!-- Value arc (цветная) -->
+    <circle
+      *ngIf="score > 0"
+      [attr.cx]="cx" [attr.cy]="cy" [attr.r]="r"
       fill="none"
       [attr.stroke]="color"
-      stroke-width="12"
+      stroke-width="14"
       stroke-linecap="round"
+      [attr.stroke-dasharray]="valueDash"
+      transform="rotate(180, 100, 100)"
       class="gauge-arc"
     />
-    <!-- Score number -->
-    <text x="100" y="90" text-anchor="middle" class="gauge-score" [attr.fill]="color">
+    <!-- Score -->
+    <text x="100" y="95" text-anchor="middle" class="gauge-score" [attr.fill]="color">
       {{ score }}
     </text>
-    <!-- Grade letter -->
-    <text x="100" y="112" text-anchor="middle" class="gauge-grade" [attr.fill]="color">
+    <!-- Grade -->
+    <text x="100" y="120" text-anchor="middle" class="gauge-grade" [attr.fill]="color">
       {{ grade }}
     </text>
   </svg>

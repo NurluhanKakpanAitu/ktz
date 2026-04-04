@@ -1,8 +1,9 @@
 .dashboard {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 48px);
   background: #0f1724;
+  overflow: hidden;
 }
 
 /* Header */
@@ -104,10 +105,16 @@
   flex: 1;
   padding: 16px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-main > * {
+  flex: 1;
 }
 
 .dash-sidebar {
-  width: 320px;
+  width: 280px;
   border-left: 1px solid #2a3a50;
   overflow-y: auto;
   flex-shrink: 0;

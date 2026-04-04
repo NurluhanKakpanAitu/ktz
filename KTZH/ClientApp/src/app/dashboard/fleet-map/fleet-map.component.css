@@ -1,6 +1,12 @@
 .fleet-map {
   width: 100%;
-  height: 500px;
+  height: 100%;
+  min-height: 500px;
   border-radius: 8px;
   border: 1px solid #2a3a50;
+}
+
+:host ::ng-deep .train-marker {
+  background: transparent !important;
+  border: none !important;
 }

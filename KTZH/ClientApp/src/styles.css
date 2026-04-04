@@ -1,20 +1,22 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles — КТЖ Dashboard */
 
-/* Provide sufficient contrast against white background */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #0f1724;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 a {
-  color: #0366d6;
+  color: #3b82f6;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
-code {
-  color: #e01a76;
-}
-
-.btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+main {
+  min-height: calc(100vh - 48px);
 }

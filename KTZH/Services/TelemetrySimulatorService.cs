@@ -29,6 +29,11 @@ public class TelemetrySimulatorService : BackgroundService
     private int _nextCriticalTick;
     private readonly ConcurrentDictionary<string, (string Param, int ExpiresAtTick)> _activeOverrides = new();
 
+    /// <summary>Прогресс каждого локомотива по маршруту (0.0–1.0)</summary>
+    private readonly ConcurrentDictionary<string, double> _routeProgress = new();
+    /// <summary>Направление движения: +1 = вперёд, -1 = обратно</summary>
+    private readonly ConcurrentDictionary<string, int> _routeDirection = new();
+
     public TelemetrySimulatorService(
         IHubContext<TelemetryHub> hub,
         IServiceScopeFactory scopeFactory,
@@ -243,9 +248,8 @@ public class TelemetrySimulatorService : BackgroundService
         else
             SimulateKZ8A(s, prev, speed, overrideParam);
 
-        // Медленное движение координат вдоль маршрута
-        state.Locomotive.Latitude += Gaussian(0, 0.001);
-        state.Locomotive.Longitude += Gaussian(0, 0.001);
+        // Движение по реальному ЖД маршруту
+        UpdatePosition(state, speed);
 
         return s;
     }
@@ -381,34 +385,89 @@ public class TelemetrySimulatorService : BackgroundService
 
     // ── Алерты ──
 
+    /// <summary>Трекинг активных алертов по (locomotiveId, parameter) — чтобы не дублировать</summary>
+    private readonly ConcurrentDictionary<string, DateTime> _activeAlertKeys = new();
+    private int _lastDeactivationTick;
+
     private void GenerateAlerts(TelemetrySnapshot snapshot, HealthScore health)
     {
+        var locoId = snapshot.LocomotiveId;
+
+        // Собираем текущие проблемные параметры
+        var currentParams = new HashSet<string>();
+        foreach (var msg in health.ActiveAlerts)
+        {
+            currentParams.Add(ExtractParamName(msg));
+        }
+
+        // Деактивируем алерты этого локомотива, которых нет в currentParams
+        var keysToRemove = _activeAlertKeys.Keys
+            .Where(k => k.StartsWith(locoId + ":") && !currentParams.Contains(k[(locoId.Length + 1)..]))
+            .ToList();
+
+        foreach (var key in keysToRemove)
+            _activeAlertKeys.TryRemove(key, out _);
+
+        // Каждые 30 секунд — деактивируем в БД алерты старше 2 минут
+        if (_tickCount - _lastDeactivationTick >= 30)
+        {
+            _lastDeactivationTick = _tickCount;
+            try
+            {
+                using var scopeClean = _scopeFactory.CreateScope();
+                var dbClean = scopeClean.ServiceProvider.GetRequiredService<AppDbContext>();
+                var cutoff = DateTime.UtcNow.AddMinutes(-2);
+                var staleAlerts = dbClean.Alerts
+                    .Where(a => a.IsActive && a.TriggeredAt < cutoff)
+                    .ToList();
+                foreach (var a in staleAlerts)
+                    a.IsActive = false;
+                if (staleAlerts.Count > 0)
+                    dbClean.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка деактивации старых алертов");
+            }
+        }
+
+        // Создаём новые алерты только для параметров без активного трекинга
         if (health.ActiveAlerts.Count == 0) return;
 
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var newAlerts = false;
 
         foreach (var msg in health.ActiveAlerts)
         {
+            var param = ExtractParamName(msg);
+            var key = $"{locoId}:{param}";
+
+            // Уже есть активный алерт для этого параметра — пропускаем
+            if (_activeAlertKeys.ContainsKey(key)) continue;
+
             var severity = msg.StartsWith("КРИТИЧНО") ? AlertSeverity.Critical : AlertSeverity.Warning;
             var alert = new Alert
             {
-                LocomotiveId = snapshot.LocomotiveId,
+                LocomotiveId = locoId,
                 Severity = severity,
-                Parameter = ExtractParamName(msg),
+                Parameter = param,
                 Message = msg,
                 Value = 0,
                 TriggeredAt = DateTime.UtcNow
             };
 
+            _activeAlertKeys[key] = DateTime.UtcNow;
             db.Alerts.Add(alert);
             RecentAlerts.Add(alert);
+            newAlerts = true;
 
             // Broadcast алерт
             _hub.Clients.All.SendAsync("ReceiveAlert", alert);
         }
 
-        db.SaveChanges();
+        if (newAlerts)
+            db.SaveChanges();
 
         // Ограничиваем in-memory кэш до 200 записей
         while (RecentAlerts.Count > 200)
@@ -446,6 +505,126 @@ public class TelemetrySimulatorService : BackgroundService
         {
             _logger.LogError(ex, "Ошибка сохранения телеметрии в БД");
         }
+    }
+
+    // ── Реальные ЖД маршруты Казахстана (путевые точки lat/lon) ──
+
+    private static readonly Dictionary<string, (double Lat, double Lon)[]> RailwayRoutes = new()
+    {
+        // ТЭ33А-001: Алматы → Шымкент (через Тараз)
+        ["TE33A-001"] = new[] {
+            (43.238, 76.889), (43.350, 76.200), (43.400, 75.500),
+            (43.300, 74.800), (43.100, 74.000), (42.980, 73.200),
+            (42.900, 72.400), (42.800, 71.600), (42.530, 71.367),  // Тараз
+            (42.450, 70.800), (42.350, 70.100), (42.315, 69.597)   // Шымкент
+        },
+        // ТЭ33А-002: Шымкент → Кызылорда
+        ["TE33A-002"] = new[] {
+            (42.315, 69.597), (42.400, 69.000), (42.500, 68.200),
+            (42.800, 67.500), (43.200, 67.000), (43.500, 66.500),
+            (43.800, 66.000), (44.200, 65.600), (44.853, 65.509)   // Кызылорда
+        },
+        // ТЭ33А-003: Актобе → Кандыагаш
+        ["TE33A-003"] = new[] {
+            (50.279, 57.207), (50.150, 57.500), (50.000, 57.900),
+            (49.800, 58.200), (49.600, 58.600), (49.470, 58.850),
+            (49.400, 59.100), (49.300, 59.400), (49.200, 59.600)   // Кандыагаш
+        },
+        // ТЭ33А-004: Атырау → Актобе
+        ["TE33A-004"] = new[] {
+            (47.106, 51.923), (47.300, 52.300), (47.600, 52.800),
+            (47.900, 53.400), (48.200, 54.000), (48.600, 54.500),
+            (49.000, 55.100), (49.400, 55.700), (49.800, 56.300),
+            (50.100, 56.800), (50.279, 57.207)                      // Актобе
+        },
+        // ТЭ33А-005: УКК → Семей
+        ["TE33A-005"] = new[] {
+            (49.948, 82.628), (49.980, 82.200), (50.050, 81.600),
+            (50.100, 81.000), (50.200, 80.500), (50.350, 80.200),
+            (50.410, 80.260)                                         // Семей
+        },
+        // ТЭ33А-006: Кызылорда → Туркестан
+        ["TE33A-006"] = new[] {
+            (44.853, 65.509), (44.600, 65.800), (44.300, 66.200),
+            (44.000, 66.700), (43.700, 67.200), (43.400, 67.800),
+            (43.297, 68.251)                                         // Туркестан
+        },
+        // KZ8A-001: Астана → Қарағанды
+        ["KZ8A-001"] = new[] {
+            (51.180, 71.445), (51.000, 71.600), (50.800, 71.900),
+            (50.600, 72.200), (50.400, 72.500), (50.200, 72.800),
+            (50.000, 73.000), (49.806, 73.088)                      // Қарағанды
+        },
+        // KZ8A-002: Қарағанды → Алматы (через Балхаш)
+        ["KZ8A-002"] = new[] {
+            (49.806, 73.088), (49.400, 73.300), (49.000, 73.800),
+            (48.500, 74.200), (47.800, 74.500), (46.848, 74.980),   // Балхаш
+            (46.200, 75.200), (45.500, 75.500), (44.800, 75.900),
+            (44.200, 76.300), (43.600, 76.600), (43.238, 76.889)    // Алматы
+        },
+        // KZ8A-003: Астана → Петропавловск
+        ["KZ8A-003"] = new[] {
+            (51.180, 71.445), (51.400, 71.200), (51.700, 70.800),
+            (52.000, 70.400), (52.300, 70.000), (52.600, 69.600),
+            (52.900, 69.300), (53.200, 69.142),
+            (54.200, 69.100), (54.875, 69.163)                      // Петропавловск
+        },
+        // KZ8A-004: Алматы → Астана (через Балхаш, Қарағанды)
+        ["KZ8A-004"] = new[] {
+            (43.238, 76.889), (43.600, 76.600), (44.200, 76.300),
+            (44.800, 75.900), (45.500, 75.500), (46.200, 75.200),
+            (46.848, 74.980), (47.800, 74.500), (48.500, 74.200),   // Балхаш
+            (49.000, 73.800), (49.806, 73.088),                      // Қарағанды
+            (50.200, 72.800), (50.600, 72.200), (51.000, 71.600),
+            (51.180, 71.445)                                          // Астана
+        }
+    };
+
+    /// <summary>Интерполяция позиции по маршруту (0.0–1.0)</summary>
+    private static (double Lat, double Lon) InterpolateRoute((double Lat, double Lon)[] waypoints, double progress)
+    {
+        if (waypoints.Length < 2) return waypoints[0];
+
+        var p = Math.Clamp(progress, 0, 1);
+        var totalSegments = waypoints.Length - 1;
+        var exactSegment = p * totalSegments;
+        var segIndex = (int)Math.Floor(exactSegment);
+        if (segIndex >= totalSegments) segIndex = totalSegments - 1;
+        var t = exactSegment - segIndex;
+
+        var from = waypoints[segIndex];
+        var to = waypoints[segIndex + 1];
+
+        return (
+            from.Lat + (to.Lat - from.Lat) * t,
+            from.Lon + (to.Lon - from.Lon) * t
+        );
+    }
+
+    /// <summary>Обновить позицию локомотива по ЖД маршруту</summary>
+    private void UpdatePosition(LocomotiveState state, double speed)
+    {
+        var id = state.Locomotive.Id;
+        if (!RailwayRoutes.TryGetValue(id, out var waypoints)) return;
+
+        // Скорость движения по маршруту: ~80 км/ч → полный маршрут за ~10 минут симуляции
+        var speedFactor = (speed / 120.0) * 0.0008;
+
+        var dir = _routeDirection.GetOrAdd(id, 1);
+        var progress = _routeProgress.GetOrAdd(id, _rng.NextDouble() * 0.3); // старт на случайной позиции
+
+        progress += speedFactor * dir;
+
+        // Разворот на концах маршрута
+        if (progress >= 1.0) { progress = 1.0; dir = -1; }
+        else if (progress <= 0.0) { progress = 0.0; dir = 1; }
+
+        _routeProgress[id] = progress;
+        _routeDirection[id] = dir;
+
+        var (lat, lon) = InterpolateRoute(waypoints, progress);
+        state.Locomotive.Latitude = lat;
+        state.Locomotive.Longitude = lon;
     }
 
     // ── Утилиты ──

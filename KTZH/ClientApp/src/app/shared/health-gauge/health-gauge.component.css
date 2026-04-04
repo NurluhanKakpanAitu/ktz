@@ -5,8 +5,8 @@
 }
 
 .gauge-svg {
-  width: 200px;
-  height: 120px;
+  width: 180px;
+  height: 130px;
 }
 
 .gauge-arc {
@@ -14,13 +14,13 @@
 }
 
 .gauge-score {
-  font-size: 36px;
-  font-weight: 700;
-  font-family: 'Segoe UI', sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
 }
 
 .gauge-grade {
-  font-size: 18px;
-  font-weight: 600;
-  font-family: 'Segoe UI', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
 }

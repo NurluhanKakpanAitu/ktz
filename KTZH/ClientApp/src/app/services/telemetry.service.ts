@@ -7,6 +7,9 @@ import {
   Alert
 } from '../models/telemetry.models';
 
+// Бэкенд URL: через Angular proxy (dev) или напрямую (prod)
+const BACKEND_URL = 'http://localhost:5210';
+
 @Injectable({ providedIn: 'root' })
 export class TelemetryService implements OnDestroy {
 
@@ -48,11 +51,14 @@ export class TelemetryService implements OnDestroy {
     }
 
     const url = locomotiveId
-      ? `/hubs/telemetry?locomotiveId=${locomotiveId}`
-      : '/hubs/telemetry';
+      ? `${BACKEND_URL}/hubs/telemetry?locomotiveId=${locomotiveId}`
+      : `${BACKEND_URL}/hubs/telemetry`;
 
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(url)
+      .withUrl(url, {
+        skipNegotiation: true,
+        transport: signalR.HttpTransportType.WebSockets
+      })
       .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 30000])
       .configureLogging(signalR.LogLevel.Warning)
       .build();
