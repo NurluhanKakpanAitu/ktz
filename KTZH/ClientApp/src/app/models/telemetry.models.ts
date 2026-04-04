@@ -24,6 +24,30 @@ export interface TelemetrySnapshot {
   tractionMotorTemperature?: number;
   catenaryVoltage?: number;
   tractiveEffort?: number;
+
+  // Расширенные (TASK-015)
+  wheelSlip: boolean;
+  tripDistance: number;
+  mainReservoirPressure: number;
+  brakeCylinderPressure?: number;
+  activeErrorCount: number;
+
+  // ТЭ33А расширенные
+  engineHours?: number;
+  coolantPressure?: number;
+  airFilterPressure?: number;
+  fuelTank1Level?: number;
+  fuelTank2Level?: number;
+  instantFuelRate?: number;
+  totalFuelConsumed?: number;
+  engineMode?: string;
+  tractiveEffortTE?: number;
+
+  // KZ8A расширенные
+  catenaryCurrent?: number;
+  shaftPower?: number;
+  powerFactor?: number;
+  igbtTemperature?: number;
 }
 
 export interface HealthScore {

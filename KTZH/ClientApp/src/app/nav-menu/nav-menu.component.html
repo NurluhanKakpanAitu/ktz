@@ -12,6 +12,39 @@
           </a>
         </li>
       </ul>
+
+      <!-- Alert Bell -->
+      <div class="alert-bell-wrap">
+        <button class="bell-btn" (click)="toggleDropdown()" [class.has-alerts]="unreadCount > 0">
+          <span class="bell-icon">🔔</span>
+          <span class="bell-badge" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+        </button>
+
+        <div class="alert-dropdown" *ngIf="showDropdown">
+          <div class="dropdown-header">
+            <span>Алерты</span>
+            <span class="dropdown-count" *ngIf="alerts.length > 0">{{ alerts.length }}</span>
+          </div>
+          <div class="dropdown-list" *ngIf="alerts.length > 0">
+            <a *ngFor="let a of alerts"
+               class="dropdown-item"
+               [ngClass]="'sev-' + a.severity.toLowerCase()"
+               [routerLink]="['/locomotive', a.locomotiveId]"
+               (click)="showDropdown = false">
+              <span class="item-icon">{{ a.severity === 'Critical' ? '🔴' : '🟠' }}</span>
+              <div class="item-body">
+                <span class="item-loco">{{ a.locomotiveId }}</span>
+                <span class="item-param">{{ a.parameter }}</span>
+              </div>
+              <span class="item-time">{{ a.triggeredAt | date:'HH:mm:ss' }}</span>
+            </a>
+          </div>
+          <div class="dropdown-empty" *ngIf="alerts.length === 0">
+            Нет уведомлений
+          </div>
+        </div>
+      </div>
+
       <button class="logout-btn" (click)="logout()">Выход</button>
     </div>
   </nav>

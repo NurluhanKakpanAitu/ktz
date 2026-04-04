@@ -41,6 +41,26 @@ public class TelemetryHistory
     public double? CatenaryVoltage { get; set; }
     public double? TractiveEffort { get; set; }
 
+    // ── Расширенные (TASK-015) ──
+    public bool WheelSlip { get; set; }
+    public double TripDistance { get; set; }
+    public double MainReservoirPressure { get; set; }
+    public double? BrakeCylinderPressure { get; set; }
+    public int ActiveErrorCount { get; set; }
+    public double? EngineHours { get; set; }
+    public double? CoolantPressure { get; set; }
+    public double? AirFilterPressure { get; set; }
+    public double? FuelTank1Level { get; set; }
+    public double? FuelTank2Level { get; set; }
+    public double? InstantFuelRate { get; set; }
+    public double? TotalFuelConsumed { get; set; }
+    public string? EngineMode { get; set; }
+    public double? TractiveEffortTE { get; set; }
+    public double? CatenaryCurrent { get; set; }
+    public double? ShaftPower { get; set; }
+    public double? PowerFactor { get; set; }
+    public double? IgbtTemperature { get; set; }
+
     /// <summary>Health Score на момент записи</summary>
     public int HealthScore { get; set; }
 
@@ -67,6 +87,24 @@ public class TelemetryHistory
             TractionMotorTemperature = snapshot.TractionMotorTemperature,
             CatenaryVoltage = snapshot.CatenaryVoltage,
             TractiveEffort = snapshot.TractiveEffort,
+            WheelSlip = snapshot.WheelSlip,
+            TripDistance = snapshot.TripDistance,
+            MainReservoirPressure = snapshot.MainReservoirPressure,
+            BrakeCylinderPressure = snapshot.BrakeCylinderPressure,
+            ActiveErrorCount = snapshot.ActiveErrorCount,
+            EngineHours = snapshot.EngineHours,
+            CoolantPressure = snapshot.CoolantPressure,
+            AirFilterPressure = snapshot.AirFilterPressure,
+            FuelTank1Level = snapshot.FuelTank1Level,
+            FuelTank2Level = snapshot.FuelTank2Level,
+            InstantFuelRate = snapshot.InstantFuelRate,
+            TotalFuelConsumed = snapshot.TotalFuelConsumed,
+            EngineMode = snapshot.EngineMode,
+            TractiveEffortTE = snapshot.TractiveEffortTE,
+            CatenaryCurrent = snapshot.CatenaryCurrent,
+            ShaftPower = snapshot.ShaftPower,
+            PowerFactor = snapshot.PowerFactor,
+            IgbtTemperature = snapshot.IgbtTemperature,
             HealthScore = health.Score,
             HealthGrade = health.Grade
         };

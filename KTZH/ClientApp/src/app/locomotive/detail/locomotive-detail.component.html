@@ -1,53 +1,241 @@
 <div class="loco-detail" *ngIf="detail">
-  <!-- Header -->
+  <!-- Header (фиксированный) -->
   <header class="detail-header">
-    <button class="back-btn" (click)="goBack()">← Назад</button>
+    <button class="back-btn" (click)="goBack()">← Парк</button>
     <div class="header-info">
-      <h2 class="loco-name">{{ detail.name }}</h2>
-      <span class="loco-type">{{ typeName() }}</span>
+      <span class="loco-name">{{ detail.name }}</span>
+      <span class="header-sep">|</span>
       <span class="loco-route">{{ detail.route }}</span>
+      <span class="header-sep">|</span>
       <span class="loco-depot">Депо: {{ detail.depotCity }}</span>
     </div>
     <div class="header-health" *ngIf="health">
-      <app-health-gauge [score]="health.score" [grade]="health.grade"></app-health-gauge>
+      <span class="health-number" [style.color]="gradeColor(health.grade)">{{ health.score }}</span>
+      <span class="health-grade-badge" [style.background]="gradeColor(health.grade)">{{ health.grade }}</span>
     </div>
   </header>
 
-  <!-- Health Breakdown -->
-  <section class="section" *ngIf="componentList.length > 0">
-    <h3 class="section-title">Расшифровка Health Score</h3>
-    <div class="component-list">
-      <div *ngFor="let c of componentList" class="component-row">
-        <span class="comp-name">{{ c.name }}</span>
-        <div class="comp-bar-track">
-          <div class="comp-bar-fill" [style.width]="barWidth(c.score)" [style.background]="barColor(c.score)"></div>
-        </div>
-        <span class="comp-score" [style.color]="barColor(c.score)">{{ c.score }}</span>
+  <!-- Tab Bar -->
+  <nav class="tab-bar">
+    <button *ngFor="let tab of tabs" class="tab-btn"
+      [class.active]="activeTab === tab.key" (click)="activeTab = tab.key">
+      <span class="tab-icon">{{ tabIcon(tab) }}</span>
+      {{ tabLabel(tab) }}
+    </button>
+  </nav>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- ТАБ 1: Движение                   -->
+  <!-- ══════════════════════════════════ -->
+  <section class="tab-content" *ngIf="activeTab === 'movement' && snapshot">
+    <div class="params-grid">
+      <!-- Gauge: Скорость -->
+      <app-param-chart chartType="gauge" label="Скорость" unit="км/ч"
+        [value]="snapshot.speed" [maxValue]="140"
+        [criticalThreshold]="120" thresholdDirection="above">
+      </app-param-chart>
+
+      <!-- Gauge: Обороты (ТЭ33А) -->
+      <app-param-chart *ngIf="isTE33A()" chartType="gauge" label="Обороты дизеля GEVO12" unit="об/мин"
+        [value]="snapshot.dieselRpm ?? 0" [maxValue]="1200"
+        [warningThreshold]="1050" [criticalThreshold]="1100" thresholdDirection="above"
+        [healthContribution]="hc('Обороты дизеля')" [healthWeight]="0.10">
+      </app-param-chart>
+
+      <!-- Zone-line: Тяговое усилие -->
+      <app-param-chart chartType="zone-line" label="Тяговое усилие" unit="кН"
+        [value]="isTE33A() ? (snapshot.tractiveEffortTE ?? 0) : (snapshot.tractiveEffort ?? 0)"
+        [warningThreshold]="500" [criticalThreshold]="550" thresholdDirection="above">
+      </app-param-chart>
+
+      <!-- Line-inverted: Давление тормозной -->
+      <app-param-chart chartType="line-inverted" label="Давление тормозной магистрали" unit="МПа"
+        [value]="snapshot.brakePressure"
+        [warningThreshold]="0.50" [criticalThreshold]="0.35" thresholdDirection="below"
+        [healthContribution]="hc('Давление тормозной')" [healthWeight]="0.10">
+      </app-param-chart>
+
+      <!-- Line-inverted: Давление гл. резервуаров -->
+      <app-param-chart chartType="line-inverted" label="Давление главных резервуаров" unit="МПа"
+        [value]="snapshot.mainReservoirPressure"
+        [warningThreshold]="0.75" [criticalThreshold]="0.50" thresholdDirection="below">
+      </app-param-chart>
+
+      <!-- Zone-line: Ток ТЭД (ТЭ33А) -->
+      <app-param-chart *ngIf="isTE33A()" chartType="zone-line" label="Ток тяговых двигателей" unit="А"
+        [value]="snapshot.tractionMotorCurrent"
+        [warningThreshold]="900" [criticalThreshold]="1000" thresholdDirection="above"
+        [healthContribution]="hc('Ток ТЭД')" [healthWeight]="0.10">
+      </app-param-chart>
+
+      <!-- Zone-line: Ток ТЭД (KZ8A) -->
+      <app-param-chart *ngIf="!isTE33A()" chartType="zone-line" label="Ток тяговых двигателей" unit="А"
+        [value]="snapshot.tractionMotorCurrent"
+        [warningThreshold]="1200" [criticalThreshold]="1400" thresholdDirection="above"
+        [healthContribution]="hc('Ток ТЭД')" [healthWeight]="0.15">
+      </app-param-chart>
+
+      <!-- Line-inverted: Давл. торм. цилиндров (KZ8A) -->
+      <app-param-chart *ngIf="!isTE33A()" chartType="line-inverted" label="Давление тормозных цилиндров" unit="МПа"
+        [value]="snapshot.brakeCylinderPressure ?? 0"
+        [criticalThreshold]="0.38" thresholdDirection="above">
+      </app-param-chart>
+    </div>
+
+    <!-- Статус-индикаторы -->
+    <div class="status-indicators">
+      <div class="status-card" [class.status-danger]="snapshot.wheelSlip">
+        <span class="status-icon">🔘</span>
+        <span class="status-label">Боксование</span>
+        <span class="status-value" [class.blink-red]="snapshot.wheelSlip">
+          {{ snapshot.wheelSlip ? 'БОКСОВАНИЕ' : 'НОРМА' }}
+        </span>
       </div>
+      <div class="status-card" *ngIf="isTE33A()">
+        <span class="status-icon">⚙</span>
+        <span class="status-label">Режим двигателя</span>
+        <span class="status-value mode-badge" [ngClass]="engineModeClass()">{{ engineModeLabel() }}</span>
+      </div>
+      <!-- Counter: Пробег -->
+      <app-param-chart chartType="counter" label="Пробег рейса" unit="км"
+        [value]="snapshot.tripDistance">
+      </app-param-chart>
     </div>
   </section>
 
-  <!-- Telemetry Cards -->
-  <section class="section" *ngIf="snapshot">
-    <h3 class="section-title">Телеметрия</h3>
-    <app-telemetry-grid [snapshot]="snapshot" [locomotiveType]="detail.type"></app-telemetry-grid>
-  </section>
+  <!-- ══════════════════════════════════ -->
+  <!-- ТАБ 2: Двигатель / Электропитание -->
+  <!-- ══════════════════════════════════ -->
+  <section class="tab-content" *ngIf="activeTab === 'engine' && snapshot">
+    <!-- ТЭ33А -->
+    <ng-container *ngIf="isTE33A()">
+      <div class="params-grid">
+        <app-param-chart chartType="line" label="Температура масла" unit="°C"
+          [value]="snapshot.oilTemperature ?? 0"
+          [warningThreshold]="85" [criticalThreshold]="95" thresholdDirection="above"
+          [healthContribution]="hc('Температура масла')" [healthWeight]="0.20">
+        </app-param-chart>
 
-  <!-- Trend Charts -->
-  <section class="section" *ngIf="snapshot">
-    <h3 class="section-title">Тренды (последняя минута)</h3>
-    <app-trend-charts [snapshot]="snapshot" [locomotiveType]="detail.type"></app-trend-charts>
-  </section>
+        <app-param-chart chartType="line-inverted" label="Давление масла" unit="МПа"
+          [value]="snapshot.oilPressure ?? 0"
+          [warningThreshold]="0.49" [criticalThreshold]="0.30" thresholdDirection="below"
+          [healthContribution]="hc('Давление масла')" [healthWeight]="0.20">
+        </app-param-chart>
 
-  <!-- Alerts -->
-  <section class="section" *ngIf="alerts.length > 0">
-    <h3 class="section-title">Алерты за сессию</h3>
-    <div class="alert-history">
-      <div *ngFor="let a of alerts" class="alert-row" [ngClass]="'sev-' + a.severity.toLowerCase()">
-        <span class="alert-sev">{{ a.severity === 'Critical' ? '🔴' : '🟠' }}</span>
-        <span class="alert-param">{{ a.parameter }}</span>
-        <span class="alert-time">{{ a.triggeredAt | date:'HH:mm:ss' }}</span>
+        <app-param-chart chartType="line" label="Температура охлаждающей жидкости" unit="°C"
+          [value]="snapshot.coolantTemperature ?? 0"
+          [warningThreshold]="90" [criticalThreshold]="105" thresholdDirection="above"
+          [healthContribution]="hc('Температура ОЖ')" [healthWeight]="0.15">
+        </app-param-chart>
+
+        <app-param-chart chartType="line-inverted" label="Давление ОЖ" unit="МПа"
+          [value]="snapshot.coolantPressure ?? 0"
+          [warningThreshold]="0.10" [criticalThreshold]="0.07" thresholdDirection="below">
+        </app-param-chart>
+
+        <app-param-chart chartType="line" label="Давление воздушного фильтра" unit="кПа"
+          [value]="snapshot.airFilterPressure ?? 0"
+          [warningThreshold]="2.5" [criticalThreshold]="3.5" thresholdDirection="above">
+        </app-param-chart>
       </div>
-    </div>
+      <div class="status-indicators">
+        <app-param-chart chartType="counter" label="Моточасы ДГУ" unit="ч"
+          [value]="snapshot.engineHours ?? 0">
+        </app-param-chart>
+      </div>
+    </ng-container>
+
+    <!-- KZ8A -->
+    <ng-container *ngIf="!isTE33A()">
+      <div class="params-grid">
+        <app-param-chart chartType="zone-line" label="Напряжение контактной сети" unit="кВ"
+          [value]="snapshot.catenaryVoltage ?? 0"
+          [warningThreshold]="22" [criticalThreshold]="18" thresholdDirection="below"
+          [healthContribution]="hc('Напряжение КС')" [healthWeight]="0.25">
+        </app-param-chart>
+
+        <app-param-chart chartType="zone-line" label="Ток контактной сети" unit="А"
+          [value]="snapshot.catenaryCurrent ?? 0"
+          [warningThreshold]="350" [criticalThreshold]="400" thresholdDirection="above">
+        </app-param-chart>
+
+        <app-param-chart chartType="area" label="Мощность на валу" unit="кВт"
+          [value]="snapshot.shaftPower ?? 0">
+        </app-param-chart>
+
+        <app-param-chart chartType="zone-line" label="Коэффициент мощности cosφ" unit=""
+          [value]="snapshot.powerFactor ?? 0"
+          [warningThreshold]="0.85" [criticalThreshold]="0.70" thresholdDirection="below">
+        </app-param-chart>
+
+        <app-param-chart chartType="line" label="Температура IGBT" unit="°C"
+          [value]="snapshot.igbtTemperature ?? 0"
+          [warningThreshold]="70" [criticalThreshold]="85" thresholdDirection="above">
+        </app-param-chart>
+      </div>
+    </ng-container>
+  </section>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- ТАБ 3: Топливо / Температуры      -->
+  <!-- ══════════════════════════════════ -->
+  <section class="tab-content" *ngIf="activeTab === 'fuel' && snapshot">
+    <!-- ТЭ33А -->
+    <ng-container *ngIf="isTE33A()">
+      <div class="params-grid">
+        <app-param-chart chartType="line" label="Уровень топлива бак 1" unit="%"
+          [value]="snapshot.fuelTank1Level ?? 0"
+          [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below"
+          [healthContribution]="hc('Уровень топлива')" [healthWeight]="0.15">
+        </app-param-chart>
+
+        <app-param-chart chartType="line" label="Уровень топлива бак 2" unit="%"
+          [value]="snapshot.fuelTank2Level ?? 0"
+          [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below">
+        </app-param-chart>
+
+        <app-param-chart chartType="bar" label="Мгновенный расход топлива" unit="л/ч"
+          [value]="snapshot.instantFuelRate ?? 0"
+          [warningThreshold]="55" [criticalThreshold]="70" thresholdDirection="above">
+        </app-param-chart>
+      </div>
+
+      <!-- Общий график двух баков -->
+      <div class="full-width-chart">
+        <app-param-chart chartType="area-dual" label="Бак 1" label2="Бак 2" unit="%"
+          [value]="snapshot.fuelTank1Level ?? 0"
+          [value2]="snapshot.fuelTank2Level ?? 0"
+          [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below">
+        </app-param-chart>
+      </div>
+
+      <div class="status-indicators">
+        <app-param-chart chartType="counter" label="Суммарный расход рейса" unit="л"
+          [value]="snapshot.totalFuelConsumed ?? 0">
+        </app-param-chart>
+      </div>
+    </ng-container>
+
+    <!-- KZ8A -->
+    <ng-container *ngIf="!isTE33A()">
+      <div class="params-grid">
+        <app-param-chart chartType="line" label="Температура трансформатора" unit="°C"
+          [value]="snapshot.transformerTemperature ?? 0"
+          [warningThreshold]="80" [criticalThreshold]="95" thresholdDirection="above"
+          [healthContribution]="hc('Температура тр-ра')" [healthWeight]="0.20">
+        </app-param-chart>
+
+        <app-param-chart chartType="line" label="Температура тяговых двигателей" unit="°C"
+          [value]="snapshot.tractionMotorTemperature ?? 0"
+          [warningThreshold]="80" [criticalThreshold]="100" thresholdDirection="above"
+          [healthContribution]="hc('Температура ТЭД')" [healthWeight]="0.15">
+        </app-param-chart>
+
+        <app-param-chart chartType="line" label="Температура IGBT" unit="°C"
+          [value]="snapshot.igbtTemperature ?? 0"
+          [warningThreshold]="70" [criticalThreshold]="85" thresholdDirection="above">
+        </app-param-chart>
+      </div>
+    </ng-container>
   </section>
 </div>

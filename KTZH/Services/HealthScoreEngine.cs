@@ -117,9 +117,7 @@ public static class HealthScoreEngine
 
             // Ток ТЭД: норма 0–1200, warning 1200–1400, critical >1400
             Normalize("Ток ТЭД", "А", s.TractionMotorCurrent, 1200, 1400, 0.15, ascending: true, normalMin: 0),
-
-            // Коды ошибок — заглушка, всегда 100 (нет ошибок)
-            new ComponentScore("Коды ошибок", "", 0, 100, 0.10),
+            
         };
     }
 

@@ -112,22 +112,3 @@
 .dash-main > * {
   flex: 1;
 }
-
-.dash-sidebar {
-  width: 280px;
-  border-left: 1px solid #2a3a50;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
-@media (max-width: 900px) {
-  .dash-body {
-    flex-direction: column;
-  }
-  .dash-sidebar {
-    width: 100%;
-    border-left: none;
-    border-top: 1px solid #2a3a50;
-    max-height: 250px;
-  }
-}

@@ -1,0 +1,53 @@
+<div class="param-chart-block" [class.counter-block]="isCounter">
+  <!-- Header -->
+  <div class="param-header">
+    <span class="param-label">{{ label }}</span>
+    <span class="param-current-value" *ngIf="!isGauge">{{ formattedValue }} <small>{{ unit }}</small></span>
+    <!-- Health Badge -->
+    <div class="health-badge" *ngIf="showHealthBadge">
+      <span class="health-score" [style.color]="healthColor">{{ healthContribution }}</span>
+      <span class="health-sep">/100</span>
+      <div class="health-bar-track">
+        <div class="health-bar-fill" [style.width]="healthBarWidth" [style.background]="healthColor"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Counter (no chart) -->
+  <div class="counter-value" *ngIf="isCounter">
+    <span class="counter-num">{{ formattedValue }}</span>
+    <span class="counter-unit">{{ unit }}</span>
+  </div>
+
+  <!-- Gauge (SVG semicircle + sparkline) -->
+  <div class="gauge-wrap" *ngIf="isGauge">
+    <svg viewBox="0 0 160 100" class="gauge-svg">
+      <!-- Background arc -->
+      <circle cx="80" cy="90" [attr.r]="gaugeR"
+        fill="none" stroke="#2a3a50" stroke-width="10"
+        [attr.stroke-dasharray]="gaugeCircumference + ' ' + gaugeCircumference * 2"
+        transform="rotate(180, 80, 90)" stroke-linecap="round" />
+      <!-- Value arc -->
+      <circle cx="80" cy="90" [attr.r]="gaugeR"
+        fill="none" [attr.stroke]="gaugeColor" stroke-width="10"
+        [attr.stroke-dasharray]="gaugeDash"
+        transform="rotate(180, 80, 90)" stroke-linecap="round"
+        style="transition: stroke-dasharray 0.3s ease, stroke 0.3s ease;" />
+      <!-- Value text -->
+      <text x="80" y="78" text-anchor="middle" fill="#f1f5f9" font-size="22" font-weight="700">
+        {{ formattedValue }}
+      </text>
+      <text x="80" y="93" text-anchor="middle" fill="#64748b" font-size="10">
+        {{ unit }}
+      </text>
+    </svg>
+    <div class="sparkline-area">
+      <canvas #canvas></canvas>
+    </div>
+  </div>
+
+  <!-- Chart (all other types) -->
+  <div class="param-chart-area" *ngIf="hasChart && !isGauge">
+    <canvas #canvas></canvas>
+  </div>
+</div>

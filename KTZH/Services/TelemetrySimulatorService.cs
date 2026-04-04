@@ -194,6 +194,11 @@ public class TelemetrySimulatorService : BackgroundService
             BrakePressure = 0.60 + _rng.NextDouble() * 0.20, // 0.60–0.80 МПа
         };
 
+        // Общие расширенные
+        s.MainReservoirPressure = 0.75 + _rng.NextDouble() * 0.15;  // 0.75–0.90 МПа
+        s.TripDistance = 0;
+        s.ActiveErrorCount = 0;
+
         if (loco.Type == LocomotiveType.TE33A)
         {
             s.OilTemperature = 55 + _rng.NextDouble() * 20;        // 55–75 °C
@@ -202,6 +207,15 @@ public class TelemetrySimulatorService : BackgroundService
             s.FuelLevel = 60 + _rng.NextDouble() * 35;              // 60–95 %
             s.DieselRpm = 500 + _rng.NextDouble() * 400;            // 500–900 об/мин
             s.TractionMotorCurrent = 200 + _rng.NextDouble() * 500; // 200–700 А
+            s.EngineHours = 1000 + _rng.NextDouble() * 5000;       // 1000–6000 ч
+            s.CoolantPressure = 0.10 + _rng.NextDouble() * 0.08;   // 0.10–0.18 МПа
+            s.AirFilterPressure = 95 + _rng.NextDouble() * 5;      // 95–100 кПа
+            s.FuelTank1Level = (s.FuelLevel ?? 80) * 0.55;
+            s.FuelTank2Level = (s.FuelLevel ?? 80) * 0.45;
+            s.InstantFuelRate = 50 + _rng.NextDouble() * 150;      // 50–200 л/ч
+            s.TotalFuelConsumed = 100 + _rng.NextDouble() * 500;   // 100–600 л
+            s.EngineMode = "Optimal";
+            s.TractiveEffortTE = 100 + _rng.NextDouble() * 200;    // 100–300 кН
         }
         else
         {
@@ -210,6 +224,11 @@ public class TelemetrySimulatorService : BackgroundService
             s.CatenaryVoltage = 23 + _rng.NextDouble() * 4;             // 23–27 кВ
             s.TractiveEffort = 200 + _rng.NextDouble() * 400;           // 200–600 кН
             s.TractionMotorCurrent = 300 + _rng.NextDouble() * 600;     // 300–900 А
+            s.CatenaryCurrent = 100 + _rng.NextDouble() * 200;         // 100–300 А
+            s.ShaftPower = 2000 + _rng.NextDouble() * 4000;            // 2000–6000 кВт
+            s.PowerFactor = 0.85 + _rng.NextDouble() * 0.10;           // 0.85–0.95
+            s.IgbtTemperature = 35 + _rng.NextDouble() * 25;           // 35–60 °C
+            s.BrakeCylinderPressure = 0.25 + _rng.NextDouble() * 0.15; // 0.25–0.40 МПа
         }
 
         state.LastTelemetry = s;
@@ -234,6 +253,15 @@ public class TelemetrySimulatorService : BackgroundService
         var brake = Lerp(prev.BrakePressure, 0.70, 0.005) + Gaussian(0, 0.005);
         brake = Math.Clamp(brake, 0.30, 0.95);
 
+        // Главные резервуары: стабильно около 0.80 МПа
+        var mainRes = Lerp(prev.MainReservoirPressure, 0.80, 0.01) + Gaussian(0, 0.003);
+
+        // Пробег: растёт с каждым тиком пропорционально скорости (км = скорость * время/3600)
+        var tripDist = prev.TripDistance + speed / 3600.0;
+
+        // Ошибки: обычно 0, при override может быть 1-2
+        var errorCount = prev.ActiveErrorCount;
+
         var s = new TelemetrySnapshot
         {
             LocomotiveId = loco.Id,
@@ -241,6 +269,10 @@ public class TelemetrySimulatorService : BackgroundService
             Timestamp = DateTime.UtcNow,
             Speed = speed,
             BrakePressure = overrideParam == "BrakePressure" ? SimulateOverrideValue(prev.BrakePressure, 0.30, false) : brake,
+            MainReservoirPressure = Math.Clamp(mainRes, 0.60, 0.95),
+            TripDistance = tripDist,
+            ActiveErrorCount = hasOverride ? (_rng.NextDouble() < 0.3 ? 1 : 0) : 0,
+            WheelSlip = speed > 40 && _rng.NextDouble() < 0.005, // редкое событие
         };
 
         if (loco.Type == LocomotiveType.TE33A)
@@ -296,6 +328,30 @@ public class TelemetrySimulatorService : BackgroundService
         s.TractionMotorCurrent = ovr == "TractionMotorCurrent"
             ? SimulateOverrideValue(prev.TractionMotorCurrent, 1050, true)
             : Math.Clamp(current, 0, 1100);
+
+        // Расширенные параметры ТЭ33А
+        s.EngineHours = (prev.EngineHours ?? 3000) + 1.0 / 3600.0; // +1 сек
+        s.CoolantPressure = Math.Clamp(
+            Lerp(prev.CoolantPressure ?? 0.14, 0.14, 0.01) + Gaussian(0, 0.002),
+            0.05, 0.25);
+        s.AirFilterPressure = Math.Clamp(
+            Lerp(prev.AirFilterPressure ?? 98, 98, 0.005) + Gaussian(0, 0.2),
+            85, 101);
+        // Баки: бак1 ~55%, бак2 ~45% от общего уровня
+        s.FuelTank1Level = (s.FuelLevel ?? 80) * 0.55 + Gaussian(0, 0.3);
+        s.FuelTank2Level = (s.FuelLevel ?? 80) * 0.45 + Gaussian(0, 0.3);
+        // Мгновенный расход: зависит от оборотов
+        s.InstantFuelRate = Math.Clamp(
+            (s.DieselRpm ?? 700) / 1050.0 * 200 + Gaussian(0, 5),
+            10, 300);
+        // Суммарный расход
+        s.TotalFuelConsumed = (prev.TotalFuelConsumed ?? 200) + (s.InstantFuelRate ?? 100) / 3600.0;
+        // Режим двигателя
+        s.EngineMode = (s.DieselRpm ?? 700) < 400 ? "Idle"
+            : (s.DieselRpm ?? 700) > 1000 ? "Overload" : "Optimal";
+        // Тяговое усилие ТЭ33А
+        s.TractiveEffortTE = Math.Clamp(
+            speed / 120.0 * 350 + Gaussian(0, 5), 0, 500);
     }
 
     private void SimulateKZ8A(TelemetrySnapshot s, TelemetrySnapshot prev, double speed, string? ovr)
@@ -331,6 +387,21 @@ public class TelemetrySimulatorService : BackgroundService
         s.TractionMotorCurrent = ovr == "TractionMotorCurrent"
             ? SimulateOverrideValue(prev.TractionMotorCurrent, 1500, true)
             : Math.Clamp(current, 0, 1500);
+
+        // Расширенные параметры KZ8A
+        s.CatenaryCurrent = Math.Clamp(
+            s.TractionMotorCurrent * 0.3 + Gaussian(0, 5), 0, 500);
+        s.ShaftPower = Math.Clamp(
+            (s.CatenaryVoltage ?? 25) * (s.CatenaryCurrent ?? 150) * (0.85 + Gaussian(0, 0.02)),
+            0, 8800);
+        s.PowerFactor = Math.Clamp(
+            0.90 + Gaussian(0, 0.015), 0.75, 0.99);
+        s.IgbtTemperature = Math.Clamp(
+            Lerp(prev.IgbtTemperature ?? 50, speed / 120.0 * 55 + 25, 0.003) + Gaussian(0, 0.3),
+            20, 100);
+        s.BrakeCylinderPressure = Math.Clamp(
+            Lerp(prev.BrakeCylinderPressure ?? 0.30, 0.30, 0.01) + Gaussian(0, 0.005),
+            0.10, 0.50);
     }
 
     // ── Аномалии (Warning / Critical) ──

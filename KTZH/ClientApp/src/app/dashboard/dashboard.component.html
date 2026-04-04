@@ -9,7 +9,6 @@
       <span class="fleet-health" [style.color]="fleetHealthAvg >= 75 ? '#22c55e' : fleetHealthAvg >= 50 ? '#f59e0b' : '#ef4444'">
         Парк: {{ fleetHealthAvg }}
       </span>
-      <span class="alert-counter" *ngIf="alertCount > 0">{{ alertCount }} алертов</span>
       <span class="conn-status" [class.online]="connected">
         {{ connected ? 'LIVE' : 'OFFLINE' }}
       </span>
@@ -22,12 +21,9 @@
 
   <!-- Body -->
   <div class="dash-body">
-    <div class="dash-main">
+    <div class="dash-main full-width">
       <app-fleet-map *ngIf="viewMode === 'map'"></app-fleet-map>
       <app-fleet-list *ngIf="viewMode === 'list'"></app-fleet-list>
     </div>
-    <aside class="dash-sidebar">
-      <app-alert-panel></app-alert-panel>
-    </aside>
   </div>
 </div>

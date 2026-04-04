@@ -14,8 +14,9 @@ import { FleetListComponent } from './dashboard/fleet-list/fleet-list.component'
 import { AlertPanelComponent } from './dashboard/alert-panel/alert-panel.component';
 import { HealthGaugeComponent } from './shared/health-gauge/health-gauge.component';
 import { MetricCardComponent } from './shared/metric-card/metric-card.component';
+import { SharedTrendChartComponent } from './shared/trend-chart/trend-chart.component';
+import { ParamChartComponent } from './shared/param-chart/param-chart.component';
 import { TelemetryGridComponent } from './locomotive/telemetry-grid/telemetry-grid.component';
-import { TrendChartComponent } from './locomotive/trend-chart/trend-chart.component';
 import { TrendChartsComponent } from './locomotive/trend-chart/trend-charts.component';
 import { LocomotiveDetailComponent } from './locomotive/detail/locomotive-detail.component';
 
@@ -35,7 +36,8 @@ import { AuthInterceptor } from './services/auth.interceptor';
     HealthGaugeComponent,
     MetricCardComponent,
     TelemetryGridComponent,
-    TrendChartComponent,
+    SharedTrendChartComponent,
+    ParamChartComponent,
     TrendChartsComponent,
     LocomotiveDetailComponent
   ],

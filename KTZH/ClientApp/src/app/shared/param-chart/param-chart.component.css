@@ -1,0 +1,133 @@
+.param-chart-block {
+  background: #1e2d42;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #2a3a50;
+}
+
+.param-chart-block.counter-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 80px;
+}
+
+/* Header */
+.param-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 4px;
+}
+
+.param-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.param-current-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+}
+
+.param-current-value small {
+  font-size: 10px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+/* Health badge */
+.health-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.health-score {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.health-sep {
+  font-size: 9px;
+  color: #64748b;
+}
+
+.health-bar-track {
+  width: 36px;
+  height: 4px;
+  background: #2a3a50;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.health-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* Chart area */
+.param-chart-area {
+  height: 130px;
+  padding: 0 6px 6px;
+}
+
+.param-chart-area canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Counter */
+.counter-value {
+  padding: 8px 14px 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.counter-num {
+  font-size: 28px;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.counter-unit {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Gauge */
+.gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.gauge-svg {
+  width: 140px;
+  height: 90px;
+}
+
+.sparkline-area {
+  width: 100%;
+  height: 36px;
+  padding: 0 6px 6px;
+}
+
+.sparkline-area canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
