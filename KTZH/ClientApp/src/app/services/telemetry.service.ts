@@ -10,6 +10,10 @@ import {
 // Бэкенд URL: через Angular proxy (dev) или напрямую (prod)
 const BACKEND_URL = 'http://localhost:5210';
 
+function getToken(): string {
+  return localStorage.getItem('ktz_token') || '';
+}
+
 @Injectable({ providedIn: 'root' })
 export class TelemetryService implements OnDestroy {
 
@@ -57,7 +61,8 @@ export class TelemetryService implements OnDestroy {
     this.connection = new signalR.HubConnectionBuilder()
       .withUrl(url, {
         skipNegotiation: true,
-        transport: signalR.HttpTransportType.WebSockets
+        transport: signalR.HttpTransportType.WebSockets,
+        accessTokenFactory: () => getToken()
       })
       .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 30000])
       .configureLogging(signalR.LogLevel.Warning)

@@ -57,7 +57,7 @@ public static class HealthScoreEngine
         {
             if (c.Score < 30)
                 alerts.Add($"КРИТИЧНО: {c.Name} = {c.RawValue:F1} {c.Unit} (критический порог)");
-            else if (c.Score < 60)
+            else if (c.Score < 80)
                 alerts.Add($"ВНИМАНИЕ: {c.Name} = {c.RawValue:F1} {c.Unit} (предупреждение)");
         }
 

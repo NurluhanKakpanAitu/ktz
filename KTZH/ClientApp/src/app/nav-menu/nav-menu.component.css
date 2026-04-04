@@ -62,3 +62,26 @@
   background: #1e2d42;
   color: #22c55e;
 }
+
+.ktz-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid #2a3a50;
+  color: #94a3b8;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+}

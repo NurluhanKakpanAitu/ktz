@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KTZH.Data;
@@ -12,6 +13,7 @@ namespace KTZH.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class LocomotivesController : ControllerBase
 {
     private readonly TelemetrySimulatorService _simulator;

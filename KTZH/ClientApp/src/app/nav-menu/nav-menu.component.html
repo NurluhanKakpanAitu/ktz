@@ -1,15 +1,18 @@
-<header class="ktz-nav">
+<header class="ktz-nav" *ngIf="auth.isLoggedIn()">
   <nav class="ktz-nav-inner">
     <a class="ktz-brand" routerLink="/">
       <span class="ktz-logo">КТЖ</span>
       <span class="ktz-title">Locomotive Dashboard</span>
     </a>
-    <ul class="ktz-links">
-      <li>
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-          Диспетчерская
-        </a>
-      </li>
-    </ul>
+    <div class="ktz-right">
+      <ul class="ktz-links">
+        <li>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            Диспетчерская
+          </a>
+        </li>
+      </ul>
+      <button class="logout-btn" (click)="logout()">Выход</button>
+    </div>
   </nav>
 </header>

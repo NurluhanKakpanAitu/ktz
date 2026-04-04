@@ -1,0 +1,43 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">КТЖ</div>
+    <h2 class="login-title">Locomotive Dashboard</h2>
+    <p class="login-subtitle">Система мониторинга локомотивов</p>
+
+    <form (ngSubmit)="onSubmit()" class="login-form">
+      <div class="field">
+        <label for="login">Логин</label>
+        <input
+          id="login"
+          type="text"
+          [(ngModel)]="login"
+          name="login"
+          placeholder="Введите логин"
+          autocomplete="username"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="password">Пароль</label>
+        <input
+          id="password"
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="Введите пароль"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <div class="error" *ngIf="error">{{ error }}</div>
+
+      <button type="submit" class="login-btn" [disabled]="loading || !login || !password">
+        {{ loading ? 'Вход...' : 'Войти' }}
+      </button>
+    </form>
+
+    <p class="login-hint">Диспетчер КТЖ</p>
+  </div>
+</div>
