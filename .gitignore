@@ -1,2 +1,26 @@
+# Secrets
 .env
 data/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Rider / IntelliJ
+.idea/
+*.iml
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
