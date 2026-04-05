@@ -6,7 +6,7 @@
       <span class="logo-sub">Locomotive Dashboard</span>
     </div>
     <div class="header-center">
-      <span class="fleet-health" [style.color]="fleetHealthAvg >= 75 ? '#22c55e' : fleetHealthAvg >= 50 ? '#f59e0b' : '#ef4444'">
+      <span class="fleet-health" [style.color]="fleetHealthAvg >= 75 ? 'var(--color-normal)' : fleetHealthAvg >= 50 ? 'var(--color-warning)' : 'var(--color-critical)'">
         Парк: {{ fleetHealthAvg }}
       </span>
       <span class="conn-status" [class.online]="connected">
@@ -14,6 +14,10 @@
       </span>
     </div>
     <div class="header-right">
+      <button *ngIf="isDev" class="burst-btn" [disabled]="burstRunning" (click)="runBurst()"
+              [title]="'Highload тест: 100 событий телеметрии за ~500мс'">
+        {{ burstRunning ? '⏳ Тест...' : burstResult ? '✓ ' + burstResult.eventsGenerated + ' / ' + burstResult.durationMs + 'мс' : '⚡ Тест нагрузки' }}
+      </button>
       <button class="tab-btn" [class.active]="viewMode === 'map'" (click)="viewMode = 'map'">Карта</button>
       <button class="tab-btn" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Список</button>
     </div>

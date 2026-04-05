@@ -1,8 +1,8 @@
 .param-chart-block {
-  background: #1e2d42;
+  background: var(--bg-card);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #2a3a50;
+  border: 1px solid var(--border-color);
 }
 
 .param-chart-block.counter-block {
@@ -23,7 +23,7 @@
 .param-label {
   font-size: 11px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-secondary);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -35,14 +35,14 @@
 .param-current-value {
   font-size: 15px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
 .param-current-value small {
   font-size: 10px;
   font-weight: 400;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* Health badge */
@@ -61,13 +61,13 @@
 
 .health-sep {
   font-size: 9px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .health-bar-track {
   width: 36px;
   height: 4px;
-  background: #2a3a50;
+  background: var(--border-color);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -100,12 +100,12 @@
 .counter-num {
   font-size: 28px;
   font-weight: 800;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .counter-unit {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* Gauge */

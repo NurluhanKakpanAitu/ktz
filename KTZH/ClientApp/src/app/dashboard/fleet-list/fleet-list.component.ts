@@ -6,7 +6,7 @@ import { ApiService } from '../../services/api.service';
 import { LocomotiveDto } from '../../models/telemetry.models';
 
 const GRADE_COLORS: Record<string, string> = {
-  A: '#22c55e', B: '#84cc16', C: '#f59e0b', D: '#f97316', E: '#ef4444'
+  A: 'var(--grade-a)', B: 'var(--grade-b)', C: 'var(--grade-c)', D: 'var(--grade-d)', E: 'var(--grade-e)'
 };
 
 const GRADE_ORDER: Record<string, number> = {
@@ -98,6 +98,6 @@ export class FleetListComponent implements OnInit, OnDestroy {
   }
 
   gradeColor(grade: string): string {
-    return GRADE_COLORS[grade] || '#6b7280';
+    return GRADE_COLORS[grade] || 'var(--color-unknown)';
   }
 }

@@ -1,5 +1,5 @@
 .alert-panel {
-  background: #1a2535;
+  background: var(--bg-secondary);
   border-radius: 8px;
   padding: 12px;
   height: 100%;
@@ -13,13 +13,13 @@
   align-items: center;
   margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #2a3a50;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .alert-title {
   font-size: 14px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .alert-counts {
@@ -30,7 +30,7 @@
 .count-critical {
   font-size: 12px;
   font-weight: 600;
-  color: #ef4444;
+  color: var(--color-critical);
   background: rgba(239, 68, 68, 0.15);
   padding: 2px 8px;
   border-radius: 10px;
@@ -39,7 +39,7 @@
 .count-warning {
   font-size: 12px;
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--color-warning);
   background: rgba(245, 158, 11, 0.15);
   padding: 2px 8px;
   border-radius: 10px;
@@ -61,24 +61,24 @@
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s;
-  background: #1e2d42;
+  background: var(--bg-card);
 }
 
 .alert-item:hover {
-  background: #253b55;
+  background: var(--bg-hover);
 }
 
 .alert-item.severity-critical {
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--color-critical);
   animation: blink-critical 1.5s ease-in-out infinite;
 }
 
 .alert-item.severity-warning {
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid var(--color-warning);
 }
 
 .alert-item.severity-info {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--accent-blue);
 }
 
 .alert-icon {
@@ -101,31 +101,31 @@
 .alert-loco {
   font-size: 12px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .alert-time {
   font-size: 10px;
-  color: #64748b;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
 .alert-message {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .no-alerts {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 13px;
   text-align: center;
   padding: 20px 0;
 }
 
 @keyframes blink-critical {
-  0%, 100% { background: #1e2d42; }
+  0%, 100% { background: var(--bg-card); }
   50% { background: rgba(239, 68, 68, 0.12); }
 }

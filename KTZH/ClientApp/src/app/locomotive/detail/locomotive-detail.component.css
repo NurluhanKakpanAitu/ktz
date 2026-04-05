@@ -1,6 +1,6 @@
 .loco-detail {
   padding: 0 24px 40px;
-  background: #0f1724;
+  background: var(--bg-primary);
 }
 
 /* Header */
@@ -9,17 +9,17 @@
   align-items: center;
   gap: 16px;
   padding: 12px 0;
-  border-bottom: 1px solid #2a3a50;
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  background: #0f1724;
+  background: var(--bg-primary);
   z-index: 10;
 }
 
 .back-btn {
-  background: #1e2d42;
-  border: 1px solid #2a3a50;
-  color: #94a3b8;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
   padding: 6px 14px;
   border-radius: 6px;
   cursor: pointer;
@@ -30,8 +30,8 @@
 }
 
 .back-btn:hover {
-  background: #253b55;
-  color: #f1f5f9;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .header-info {
@@ -45,17 +45,17 @@
 .loco-name {
   font-size: 16px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
 .header-sep {
-  color: #2a3a50;
+  color: var(--border-color);
 }
 
 .loco-route, .loco-depot {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -72,7 +72,7 @@
 }
 
 .health-grade-badge {
-  color: #0f1724;
+  color: var(--bg-primary);
   font-size: 12px;
   font-weight: 800;
   padding: 2px 8px;
@@ -83,12 +83,12 @@
 .tab-bar {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid #1e2d42;
+  border-bottom: 2px solid var(--bg-card);
   margin-bottom: 16px;
   padding-top: 8px;
   position: sticky;
   top: 52px;
-  background: #0f1724;
+  background: var(--bg-primary);
   z-index: 9;
 }
 
@@ -101,7 +101,7 @@
   border: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -110,12 +110,12 @@
 }
 
 .tab-btn:hover {
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 .tab-btn.active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
+  color: var(--accent-blue);
+  border-bottom-color: var(--accent-blue);
 }
 
 .tab-icon {
@@ -165,8 +165,8 @@
 }
 
 .status-card {
-  background: #1e2d42;
-  border: 1px solid #2a3a50;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px 16px;
   display: flex;
@@ -176,7 +176,7 @@
 }
 
 .status-card.status-danger {
-  border-color: #ef4444;
+  border-color: var(--color-critical);
   background: rgba(239, 68, 68, 0.08);
 }
 
@@ -186,7 +186,7 @@
 
 .status-label {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -194,12 +194,12 @@
 .status-value {
   font-size: 14px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   margin-left: auto;
 }
 
 .blink-red {
-  color: #ef4444;
+  color: var(--color-critical);
   animation: blink 0.8s ease-in-out infinite;
 }
 
@@ -217,16 +217,16 @@
 
 .mode-idle {
   background: rgba(100, 116, 139, 0.2);
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 .mode-optimal {
   background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  color: var(--color-normal);
 }
 
 .mode-overload {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--color-critical);
   animation: blink 1.5s ease-in-out infinite;
 }

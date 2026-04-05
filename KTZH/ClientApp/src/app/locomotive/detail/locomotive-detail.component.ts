@@ -133,9 +133,9 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
 
   gradeColor(grade: string): string {
     const colors: Record<string, string> = {
-      A: '#22c55e', B: '#84cc16', C: '#f59e0b', D: '#f97316', E: '#ef4444'
+      A: 'var(--grade-a)', B: 'var(--grade-b)', C: 'var(--grade-c)', D: 'var(--grade-d)', E: 'var(--grade-e)'
     };
-    return colors[grade] || '#6b7280';
+    return colors[grade] || 'var(--color-unknown)';
   }
 
   typeName(): string {

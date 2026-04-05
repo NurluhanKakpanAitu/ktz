@@ -3,12 +3,12 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #0f1724;
+  background: var(--bg-primary);
 }
 
 .login-card {
-  background: #1a2535;
-  border: 1px solid #2a3a50;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 40px 36px;
   width: 380px;
@@ -17,8 +17,8 @@
 
 .login-logo {
   display: inline-block;
-  background: #22c55e;
-  color: #0f1724;
+  background: var(--color-normal);
+  color: var(--bg-primary);
   font-weight: 800;
   font-size: 22px;
   padding: 6px 18px;
@@ -31,13 +31,13 @@
   margin: 0 0 4px;
   font-size: 20px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .login-subtitle {
   margin: 0 0 28px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .login-form {
@@ -52,7 +52,7 @@
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-secondary);
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -61,10 +61,10 @@
 .field input {
   width: 100%;
   padding: 10px 12px;
-  background: #0f1724;
-  border: 1px solid #2a3a50;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
@@ -72,7 +72,7 @@
 }
 
 .field input:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent-blue);
 }
 
 .field input::placeholder {
@@ -81,7 +81,7 @@
 
 .error {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--color-critical);
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 13px;
@@ -92,7 +92,7 @@
 .login-btn {
   width: 100%;
   padding: 12px;
-  background: #3b82f6;
+  background: var(--accent-blue);
   color: #fff;
   border: none;
   border-radius: 6px;

@@ -1,5 +1,5 @@
 .metric-card {
-  background: #1e2d42;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 14px;
   display: flex;
@@ -37,7 +37,7 @@
 
 .metric-label {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -49,22 +49,22 @@
 .metric-value {
   font-size: 22px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
 .status-warning .metric-value {
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 .status-critical .metric-value {
-  color: #ef4444;
+  color: var(--color-critical);
 }
 
 .metric-unit {
   font-size: 12px;
   font-weight: 400;
-  color: #64748b;
+  color: var(--text-muted);
   margin-left: 2px;
 }
 
@@ -79,16 +79,16 @@
 }
 
 .dot-normal {
-  background: #22c55e;
+  background: var(--color-normal);
 }
 
 .dot-warning {
-  background: #f59e0b;
+  background: var(--color-warning);
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
 .dot-critical {
-  background: #ef4444;
+  background: var(--color-critical);
   animation: pulse-dot 0.8s ease-in-out infinite;
 }
 
@@ -102,15 +102,15 @@
 }
 
 .bar-normal {
-  background: #22c55e;
+  background: var(--color-normal);
 }
 
 .bar-warning {
-  background: #f59e0b;
+  background: var(--color-warning);
 }
 
 .bar-critical {
-  background: #ef4444;
+  background: var(--color-critical);
 }
 
 @keyframes pulse-card {

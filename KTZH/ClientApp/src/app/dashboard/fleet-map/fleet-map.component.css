@@ -21,10 +21,10 @@
 .search-box input {
   width: 100%;
   padding: 8px 28px 8px 12px;
-  background: #1a2535;
-  border: 1px solid #2a3a50;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
@@ -32,7 +32,7 @@
 }
 
 .search-box input:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent-blue);
 }
 
 .search-box input::placeholder {
@@ -52,17 +52,17 @@
 
 .filters select {
   padding: 8px 28px 8px 10px;
-  background: #1a2535;
-  border: 1px solid #2a3a50;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-size: 12px;
   outline: none;
   cursor: pointer;
 }
 
 .filters select:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent-blue);
 }
 
 .clear-btn {
@@ -73,8 +73,8 @@
   width: 20px;
   height: 20px;
   border: none;
-  background: #2a3a50;
-  color: #f1f5f9;
+  background: var(--border-color);
+  color: var(--text-primary);
   border-radius: 50%;
   font-size: 14px;
   line-height: 1;
@@ -87,7 +87,7 @@
 }
 
 .clear-btn:hover {
-  background: #ef4444;
+  background: var(--color-critical);
 }
 
 .fleet-map {
@@ -95,7 +95,7 @@
   flex: 1;
   min-height: 400px;
   border-radius: 8px;
-  border: 1px solid #2a3a50;
+  border: 1px solid var(--border-color);
 }
 
 :host ::ng-deep .train-marker {
