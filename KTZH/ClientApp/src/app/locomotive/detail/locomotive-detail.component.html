@@ -53,58 +53,69 @@
   <!-- ══════════════════════════════════ -->
   <!-- ТАБ 1: Движение                   -->
   <!-- ══════════════════════════════════ -->
-  <section class="tab-content" *ngIf="activeTab === 'movement' && snapshot">
+  <section class="tab-content" [hidden]="activeTab !== 'movement'" *ngIf="snapshot">
     <div class="params-grid">
       <!-- Gauge: Скорость -->
       <app-param-chart chartType="gauge" label="Скорость" unit="км/ч"
         [value]="snapshot.speed" [maxValue]="140"
-        [criticalThreshold]="120" thresholdDirection="above">
+        [criticalThreshold]="120" thresholdDirection="above"
+        [initialHistory]="historyByField['speed']" [initialLabels]="historyLabels">
       </app-param-chart>
 
       <!-- Gauge: Обороты (ТЭ33А) -->
       <app-param-chart *ngIf="isTE33A()" chartType="gauge" label="Обороты дизеля GEVO12" unit="об/мин"
         [value]="snapshot.dieselRpm ?? 0" [maxValue]="1200"
         [warningThreshold]="1050" [criticalThreshold]="1100" thresholdDirection="above"
-        [healthContribution]="hc('Обороты дизеля')" [healthWeight]="0.10">
+        [healthContribution]="hc('Обороты дизеля')" [healthWeight]="0.10"
+        [initialHistory]="historyByField['dieselRpm']" [initialLabels]="historyLabels">
       </app-param-chart>
 
-      <!-- Zone-line: Тяговое усилие -->
+      <!-- Zone-line: Тяговое усилие (пороги зависят от серии) -->
       <app-param-chart chartType="zone-line" label="Тяговое усилие" unit="кН"
         [value]="isTE33A() ? (snapshot.tractiveEffortTE ?? 0) : (snapshot.tractiveEffort ?? 0)"
-        [warningThreshold]="500" [criticalThreshold]="550" thresholdDirection="above">
+        [warningThreshold]="isTE33A() ? 400 : 700"
+        [criticalThreshold]="isTE33A() ? 460 : 800"
+        thresholdDirection="above"
+        [initialHistory]="isTE33A() ? historyByField['tractiveEffortTE'] : historyByField['tractiveEffort']"
+        [initialLabels]="historyLabels">
       </app-param-chart>
 
       <!-- Line-inverted: Давление тормозной -->
       <app-param-chart chartType="line-inverted" label="Давление тормозной магистрали" unit="МПа"
         [value]="snapshot.brakePressure"
         [warningThreshold]="0.50" [criticalThreshold]="0.35" thresholdDirection="below"
-        [healthContribution]="hc('Давление тормозной')" [healthWeight]="0.10">
+        [healthContribution]="hc('Давление тормозной')" [healthWeight]="0.10"
+        [initialHistory]="historyByField['brakePressure']" [initialLabels]="historyLabels">
       </app-param-chart>
 
       <!-- Line-inverted: Давление гл. резервуаров -->
       <app-param-chart chartType="line-inverted" label="Давление главных резервуаров" unit="МПа"
         [value]="snapshot.mainReservoirPressure"
-        [warningThreshold]="0.75" [criticalThreshold]="0.50" thresholdDirection="below">
+        [warningThreshold]="0.70" [criticalThreshold]="0.50" thresholdDirection="below"
+        [initialHistory]="historyByField['mainReservoirPressure']" [initialLabels]="historyLabels">
       </app-param-chart>
 
       <!-- Zone-line: Ток ТЭД (ТЭ33А) -->
       <app-param-chart *ngIf="isTE33A()" chartType="zone-line" label="Ток тяговых двигателей" unit="А"
         [value]="snapshot.tractionMotorCurrent"
         [warningThreshold]="900" [criticalThreshold]="1000" thresholdDirection="above"
-        [healthContribution]="hc('Ток ТЭД')" [healthWeight]="0.10">
+        [healthContribution]="hc('Ток ТЭД')" [healthWeight]="0.10"
+        [initialHistory]="historyByField['tractionMotorCurrent']" [initialLabels]="historyLabels">
       </app-param-chart>
 
       <!-- Zone-line: Ток ТЭД (KZ8A) -->
       <app-param-chart *ngIf="!isTE33A()" chartType="zone-line" label="Ток тяговых двигателей" unit="А"
         [value]="snapshot.tractionMotorCurrent"
         [warningThreshold]="1200" [criticalThreshold]="1400" thresholdDirection="above"
-        [healthContribution]="hc('Ток ТЭД')" [healthWeight]="0.15">
+        [healthContribution]="hc('Ток ТЭД')" [healthWeight]="0.15"
+        [initialHistory]="historyByField['tractionMotorCurrent']" [initialLabels]="historyLabels">
       </app-param-chart>
 
       <!-- Line-inverted: Давл. торм. цилиндров (KZ8A) -->
       <app-param-chart *ngIf="!isTE33A()" chartType="line-inverted" label="Давление тормозных цилиндров" unit="МПа"
         [value]="snapshot.brakeCylinderPressure ?? 0"
-        [criticalThreshold]="0.38" thresholdDirection="above">
+        [criticalThreshold]="0.38" thresholdDirection="above"
+        [initialHistory]="historyByField['brakeCylinderPressure']" [initialLabels]="historyLabels">
       </app-param-chart>
     </div>
 
@@ -132,36 +143,41 @@
   <!-- ══════════════════════════════════ -->
   <!-- ТАБ 2: Двигатель / Электропитание -->
   <!-- ══════════════════════════════════ -->
-  <section class="tab-content" *ngIf="activeTab === 'engine' && snapshot">
+  <section class="tab-content" [hidden]="activeTab !== 'engine'" *ngIf="snapshot">
     <!-- ТЭ33А -->
     <ng-container *ngIf="isTE33A()">
       <div class="params-grid">
         <app-param-chart chartType="line+fill" label="Температура масла" unit="°C"
           [value]="snapshot.oilTemperature ?? 0"
           [warningThreshold]="85" [criticalThreshold]="95" thresholdDirection="above"
-          [healthContribution]="hc('Температура масла')" [healthWeight]="0.20">
+          [healthContribution]="hc('Температура масла')" [healthWeight]="0.20"
+          [initialHistory]="historyByField['oilTemperature']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="line-inverted" label="Давление масла" unit="МПа"
           [value]="snapshot.oilPressure ?? 0"
           [warningThreshold]="0.49" [criticalThreshold]="0.30" thresholdDirection="below"
-          [healthContribution]="hc('Давление масла')" [healthWeight]="0.20">
+          [healthContribution]="hc('Давление масла')" [healthWeight]="0.20"
+          [initialHistory]="historyByField['oilPressure']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="line+fill" label="Температура охлаждающей жидкости" unit="°C"
           [value]="snapshot.coolantTemperature ?? 0"
           [warningThreshold]="90" [criticalThreshold]="105" thresholdDirection="above"
-          [healthContribution]="hc('Температура ОЖ')" [healthWeight]="0.15">
+          [healthContribution]="hc('Температура ОЖ')" [healthWeight]="0.15"
+          [initialHistory]="historyByField['coolantTemperature']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="line-inverted" label="Давление ОЖ" unit="МПа"
           [value]="snapshot.coolantPressure ?? 0"
-          [warningThreshold]="0.10" [criticalThreshold]="0.07" thresholdDirection="below">
+          [warningThreshold]="0.10" [criticalThreshold]="0.07" thresholdDirection="below"
+          [initialHistory]="historyByField['coolantPressure']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="line+fill" label="Давление воздушного фильтра" unit="кПа"
           [value]="snapshot.airFilterPressure ?? 0"
-          [warningThreshold]="2.5" [criticalThreshold]="3.5" thresholdDirection="above">
+          [warningThreshold]="2.5" [criticalThreshold]="3.5" thresholdDirection="above"
+          [initialHistory]="historyByField['airFilterPressure']" [initialLabels]="historyLabels">
         </app-param-chart>
       </div>
       <div class="status-indicators">
@@ -177,26 +193,31 @@
         <app-param-chart chartType="zone-line" label="Напряжение контактной сети" unit="кВ"
           [value]="snapshot.catenaryVoltage ?? 0"
           [warningThreshold]="22" [criticalThreshold]="18" thresholdDirection="below"
-          [healthContribution]="hc('Напряжение КС')" [healthWeight]="0.25">
+          [healthContribution]="hc('Напряжение КС')" [healthWeight]="0.25"
+          [initialHistory]="historyByField['catenaryVoltage']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="zone-line" label="Ток контактной сети" unit="А"
           [value]="snapshot.catenaryCurrent ?? 0"
-          [warningThreshold]="350" [criticalThreshold]="400" thresholdDirection="above">
+          [warningThreshold]="350" [criticalThreshold]="400" thresholdDirection="above"
+          [initialHistory]="historyByField['catenaryCurrent']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="area" label="Мощность на валу" unit="кВт"
-          [value]="snapshot.shaftPower ?? 0">
+          [value]="snapshot.shaftPower ?? 0"
+          [initialHistory]="historyByField['shaftPower']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="zone-line" label="Коэффициент мощности cosφ" unit=""
           [value]="snapshot.powerFactor ?? 0"
-          [warningThreshold]="0.85" [criticalThreshold]="0.70" thresholdDirection="below">
+          [warningThreshold]="0.85" [criticalThreshold]="0.70" thresholdDirection="below"
+          [initialHistory]="historyByField['powerFactor']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="line+fill" label="Температура IGBT" unit="°C"
           [value]="snapshot.igbtTemperature ?? 0"
-          [warningThreshold]="70" [criticalThreshold]="85" thresholdDirection="above">
+          [warningThreshold]="70" [criticalThreshold]="85" thresholdDirection="above"
+          [initialHistory]="historyByField['igbtTemperature']" [initialLabels]="historyLabels">
         </app-param-chart>
       </div>
     </ng-container>
@@ -205,24 +226,27 @@
   <!-- ══════════════════════════════════ -->
   <!-- ТАБ 3: Топливо / Температуры      -->
   <!-- ══════════════════════════════════ -->
-  <section class="tab-content" *ngIf="activeTab === 'fuel' && snapshot">
+  <section class="tab-content" [hidden]="activeTab !== 'fuel'" *ngIf="snapshot">
     <!-- ТЭ33А -->
     <ng-container *ngIf="isTE33A()">
       <div class="params-grid">
         <app-param-chart chartType="line+fill" label="Уровень топлива бак 1" unit="%"
           [value]="snapshot.fuelTank1Level ?? 0"
           [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below"
-          [healthContribution]="hc('Уровень топлива')" [healthWeight]="0.15">
+          [healthContribution]="hc('Уровень топлива')" [healthWeight]="0.15"
+          [initialHistory]="historyByField['fuelTank1Level']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="line+fill" label="Уровень топлива бак 2" unit="%"
           [value]="snapshot.fuelTank2Level ?? 0"
-          [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below">
+          [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below"
+          [initialHistory]="historyByField['fuelTank2Level']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="bar" label="Мгновенный расход топлива" unit="л/ч"
           [value]="snapshot.instantFuelRate ?? 0"
-          [warningThreshold]="55" [criticalThreshold]="70" thresholdDirection="above">
+          [warningThreshold]="220" [criticalThreshold]="260" thresholdDirection="above"
+          [initialHistory]="historyByField['instantFuelRate']" [initialLabels]="historyLabels">
         </app-param-chart>
       </div>
 
@@ -231,7 +255,10 @@
         <app-param-chart chartType="area-dual" label="Бак 1" label2="Бак 2" unit="%"
           [value]="snapshot.fuelTank1Level ?? 0"
           [value2]="snapshot.fuelTank2Level ?? 0"
-          [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below">
+          [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below"
+          [initialHistory]="historyByField['fuelTank1Level']"
+          [initialHistory2]="historyByField['fuelTank2Level']"
+          [initialLabels]="historyLabels">
         </app-param-chart>
       </div>
 
@@ -248,18 +275,21 @@
         <app-param-chart chartType="line+fill" label="Температура трансформатора" unit="°C"
           [value]="snapshot.transformerTemperature ?? 0"
           [warningThreshold]="80" [criticalThreshold]="95" thresholdDirection="above"
-          [healthContribution]="hc('Температура тр-ра')" [healthWeight]="0.20">
+          [healthContribution]="hc('Температура тр-ра')" [healthWeight]="0.20"
+          [initialHistory]="historyByField['transformerTemperature']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="line+fill" label="Температура тяговых двигателей" unit="°C"
           [value]="snapshot.tractionMotorTemperature ?? 0"
           [warningThreshold]="80" [criticalThreshold]="100" thresholdDirection="above"
-          [healthContribution]="hc('Температура ТЭД')" [healthWeight]="0.15">
+          [healthContribution]="hc('Температура ТЭД')" [healthWeight]="0.15"
+          [initialHistory]="historyByField['tractionMotorTemperature']" [initialLabels]="historyLabels">
         </app-param-chart>
 
         <app-param-chart chartType="line+fill" label="Температура IGBT" unit="°C"
           [value]="snapshot.igbtTemperature ?? 0"
-          [warningThreshold]="70" [criticalThreshold]="85" thresholdDirection="above">
+          [warningThreshold]="70" [criticalThreshold]="85" thresholdDirection="above"
+          [initialHistory]="historyByField['igbtTemperature']" [initialLabels]="historyLabels">
         </app-param-chart>
       </div>
     </ng-container>

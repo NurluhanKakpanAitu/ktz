@@ -3,7 +3,6 @@ import { Subscription } from 'rxjs';
 import { TelemetryService } from '../services/telemetry.service';
 import { ApiService } from '../services/api.service';
 import { LocomotiveState } from '../models/telemetry.models';
-import { isDevMode } from '@angular/core';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,9 +15,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   fleetHealthAvg = 0;
   alertCount = 0;
   connected = false;
-  isDev = isDevMode();
-  burstRunning = false;
-  burstResult: { eventsGenerated: number; durationMs: number } | null = null;
 
   private fleetSub?: Subscription;
   private alertSub?: Subscription;
@@ -57,22 +53,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.api.getAlerts(true).subscribe(alerts => {
       this.alertCount = alerts.length;
-    });
-  }
-
-  runBurst(): void {
-    if (this.burstRunning) return;
-    this.burstRunning = true;
-    this.burstResult = null;
-    this.api.triggerBurst().subscribe({
-      next: res => {
-        this.burstResult = res;
-        this.burstRunning = false;
-        setTimeout(() => this.burstResult = null, 5000);
-      },
-      error: () => {
-        this.burstRunning = false;
-      }
     });
   }
 

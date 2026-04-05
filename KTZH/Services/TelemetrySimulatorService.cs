@@ -118,34 +118,6 @@ public class TelemetrySimulatorService : BackgroundService
         }
     }
 
-    /// <summary>Highload тест: 10 локомотивов × 10 тиков за 500мс</summary>
-    public async Task<(int EventsGenerated, long DurationMs)> SimulateBurst(CancellationToken ct = default)
-    {
-        var sw = Stopwatch.StartNew();
-        var count = 0;
-
-        for (var i = 0; i < 10; i++)
-        {
-            foreach (var state in Fleet.Values)
-            {
-                var snapshot = SimulateTelemetry(state);
-                ApplyEma(snapshot);
-                var health = _healthEngine.Calculate(snapshot);
-                state.LastTelemetry = snapshot;
-                state.LastHealth = health;
-
-                await _hub.Clients.Group($"loco-{state.Locomotive.Id}")
-                    .SendAsync("ReceiveTelemetry", snapshot, health, ct);
-                count++;
-            }
-            await Task.Delay(50, ct); // 10 × 50мс = 500мс
-        }
-
-        sw.Stop();
-        _logger.LogInformation("Burst завершён: {Count} событий за {Ms}мс", count, sw.ElapsedMilliseconds);
-        return (count, sw.ElapsedMilliseconds);
-    }
-
     // ── Инициализация 10 локомотивов ──
 
     private void InitializeFleet()
@@ -220,7 +192,7 @@ public class TelemetrySimulatorService : BackgroundService
             s.TractionMotorCurrent = 200 + _rng.NextDouble() * 500; // 200–700 А
             s.EngineHours = 1000 + _rng.NextDouble() * 5000;       // 1000–6000 ч
             s.CoolantPressure = 0.10 + _rng.NextDouble() * 0.08;   // 0.10–0.18 МПа
-            s.AirFilterPressure = 95 + _rng.NextDouble() * 5;      // 95–100 кПа
+            s.AirFilterPressure = 0.8 + _rng.NextDouble() * 1.2;   // 0.8–2.0 кПа (Δp на фильтре)
             s.FuelTank1Level = (s.FuelLevel ?? 80) * 0.55;
             s.FuelTank2Level = (s.FuelLevel ?? 80) * 0.45;
             s.InstantFuelRate = 50 + _rng.NextDouble() * 150;      // 50–200 л/ч
@@ -400,9 +372,10 @@ public class TelemetrySimulatorService : BackgroundService
         s.CoolantPressure = Math.Clamp(
             Lerp(prev.CoolantPressure ?? 0.14, 0.14, 0.01) + Gaussian(0, 0.002),
             0.05, 0.25);
+        // Δp на воздушном фильтре: дрейф к 1.5 кПа (со временем фильтр забивается)
         s.AirFilterPressure = Math.Clamp(
-            Lerp(prev.AirFilterPressure ?? 98, 98, 0.005) + Gaussian(0, 0.2),
-            85, 101);
+            Lerp(prev.AirFilterPressure ?? 1.2, 1.5, 0.001) + Gaussian(0, 0.05),
+            0.3, 4.5);
         // Баки: бак1 ~55%, бак2 ~45% от общего уровня
         s.FuelTank1Level = (s.FuelLevel ?? 80) * 0.55 + Gaussian(0, 0.3);
         s.FuelTank2Level = (s.FuelLevel ?? 80) * 0.45 + Gaussian(0, 0.3);

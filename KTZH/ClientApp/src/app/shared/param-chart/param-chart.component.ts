@@ -39,6 +39,9 @@ export class ParamChartComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() healthWeight: number = 0;
   @Input() chartType: ParamChartType = 'line';
   @Input() maxValue: number = 0;     // для gauge
+  @Input() initialHistory?: number[];      // начальная история для seeding
+  @Input() initialHistory2?: number[];     // начальная история для area-dual (второй ряд)
+  @Input() initialLabels?: string[];       // метки времени для начальной истории
 
   @ViewChild('canvas') canvasRef?: ElementRef<HTMLCanvasElement>;
 
@@ -47,6 +50,7 @@ export class ParamChartComponent implements AfterViewInit, OnChanges, OnDestroy 
   private dataPoints: number[] = [];
   private dataPoints2: number[] = [];
   private initialized = false;
+  private seededInitial = false;
 
   // Gauge
   readonly gaugeR = 70;
@@ -82,6 +86,8 @@ export class ParamChartComponent implements AfterViewInit, OnChanges, OnDestroy 
   }
 
   ngAfterViewInit(): void {
+    // Засеиваем начальную историю ДО создания графика, чтобы датасеты были не пустые
+    this.trySeedInitialHistory();
     if (this.hasChart || this.isGauge) {
       this.createChart();
     }
@@ -92,8 +98,47 @@ export class ParamChartComponent implements AfterViewInit, OnChanges, OnDestroy 
   ngOnChanges(changes: SimpleChanges): void {
     // Always update gauge (safe — only changes component fields, no DOM bindings cause issues)
     if (this.isGauge) this.updateGauge();
+
+    // Если initialHistory прилетела уже после создания графика — применить её
+    if (this.initialized && !this.seededInitial) {
+      this.trySeedInitialHistory();
+    }
+
     if (this.initialized) {
       this.pushPoint();
+    }
+  }
+
+  /** Попытаться засеять начальную историю в массивы данных. */
+  private trySeedInitialHistory(): void {
+    if (this.seededInitial) return;
+    if (!this.initialHistory || this.initialHistory.length === 0) return;
+    if (this.isCounter) { this.seededInitial = true; return; }
+
+    const take = Math.min(this.initialHistory.length, MAX_POINTS);
+    const startIdx = this.initialHistory.length - take;
+
+    // Мутируем in-place — Chart.js держит ссылки на this.labels/dataPoints
+    this.labels.length = 0;
+    this.dataPoints.length = 0;
+    this.dataPoints2.length = 0;
+
+    for (let i = startIdx; i < this.initialHistory.length; i++) {
+      this.dataPoints.push(this.initialHistory[i]);
+      if (this.initialLabels && this.initialLabels[i] != null) {
+        this.labels.push(this.initialLabels[i]);
+      } else {
+        this.labels.push('');
+      }
+      if (this.initialHistory2 && this.initialHistory2[i] != null) {
+        this.dataPoints2.push(this.initialHistory2[i]);
+      }
+    }
+
+    this.seededInitial = true;
+
+    if (this.chart) {
+      this.chart.update('none');
     }
   }
 

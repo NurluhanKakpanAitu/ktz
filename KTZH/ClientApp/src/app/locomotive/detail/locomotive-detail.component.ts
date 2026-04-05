@@ -34,6 +34,11 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
   health: HealthScore | null = null;
   alerts: Alert[] = [];
 
+  /** История по каждому полю телеметрии (последние 5 минут) для seeding графиков. */
+  historyByField: Record<string, number[]> = {};
+  /** Метки времени для исторических точек. */
+  historyLabels: string[] = [];
+
   activeTab = 'movement';
 
   tabs: TabDef[] = [
@@ -88,12 +93,16 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
     this.snapshot = null;
     this.health = null;
     this.alerts = [];
+    this.historyByField = {};
+    this.historyLabels = [];
     this.activeTab = 'movement';
 
     this.api.getLocomotive(this.id).subscribe(d => {
       this.detail = d;
       this.snapshot = d.lastTelemetry;
       this.health = d.lastHealth;
+      // После получения деталей загружаем историю для seeding графиков
+      this.loadHistorySeed();
     });
 
     this.telemetry.connect(this.id);
@@ -247,6 +256,46 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
         grade: point.healthGrade
       };
     }
+  }
+
+  /** Загрузить последние 5 минут истории и разложить её по полям для seeding графиков. */
+  private loadHistorySeed(): void {
+    if (!this.id) return;
+    const requestId = this.id;
+    this.api.getReplay(requestId, 5).subscribe({
+      next: history => {
+        console.log('[History seed] Получено точек:', history?.length, 'первая:', history?.[0]);
+        // Если пользователь успел переключиться на другой локомотив — игнорируем
+        if (requestId !== this.id) return;
+        if (!history || history.length === 0) return;
+
+        this.historyLabels = history.map(h =>
+          new Date(h.timestamp).toLocaleTimeString('ru-RU', {
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+          })
+        );
+
+        const fields = [
+          // Общие
+          'speed', 'brakePressure', 'mainReservoirPressure', 'tractionMotorCurrent', 'tripDistance',
+          // ТЭ33А
+          'oilTemperature', 'coolantTemperature', 'oilPressure', 'coolantPressure', 'airFilterPressure',
+          'fuelLevel', 'dieselRpm', 'engineHours', 'fuelTank1Level', 'fuelTank2Level',
+          'instantFuelRate', 'totalFuelConsumed', 'tractiveEffortTE',
+          // KZ8A
+          'transformerTemperature', 'tractionMotorTemperature', 'igbtTemperature',
+          'catenaryVoltage', 'catenaryCurrent', 'tractiveEffort', 'shaftPower',
+          'powerFactor', 'brakeCylinderPressure'
+        ];
+
+        const map: Record<string, number[]> = {};
+        for (const f of fields) {
+          map[f] = history.map(h => (h[f] ?? 0) as number);
+        }
+        this.historyByField = map;
+      },
+      error: err => console.warn('[History seed] Ошибка загрузки:', err)
+    });
   }
 
   goBack(): void {

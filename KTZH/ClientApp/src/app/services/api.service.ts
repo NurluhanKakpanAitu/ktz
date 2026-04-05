@@ -56,9 +56,4 @@ export class ApiService {
   getServiceHealth(): Observable<{ status: string; locomotivesCount: number; timestamp: string }> {
     return this.http.get<any>(`${this.base}/health`);
   }
-
-  /** Highload burst тест (только Development) */
-  triggerBurst(): Observable<{ eventsGenerated: number; durationMs: number }> {
-    return this.http.post<{ eventsGenerated: number; durationMs: number }>(`${this.base}/debug/burst`, {});
-  }
 }

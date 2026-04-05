@@ -11,10 +11,6 @@
       </span>
     </div>
     <div class="header-right">
-      <button *ngIf="isDev" class="burst-btn" [disabled]="burstRunning" (click)="runBurst()"
-              [title]="'Highload тест: 100 событий телеметрии за ~500мс'">
-        {{ burstRunning ? '⏳ Тест...' : burstResult ? '✓ ' + burstResult.eventsGenerated + ' / ' + burstResult.durationMs + 'мс' : '⚡ Тест нагрузки' }}
-      </button>
       <button class="tab-btn" [class.active]="viewMode === 'map'" (click)="viewMode = 'map'">Карта</button>
       <button class="tab-btn" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Список</button>
     </div>
