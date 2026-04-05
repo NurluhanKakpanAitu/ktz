@@ -328,9 +328,6 @@ public class TelemetrySimulatorService : BackgroundService
         // Пробег: растёт с каждым тиком пропорционально скорости (км = скорость * время/3600)
         var tripDist = prev.TripDistance + speed / 3600.0;
 
-        // Ошибки: обычно 0, при override может быть 1-2
-        var errorCount = prev.ActiveErrorCount;
-
         var s = new TelemetrySnapshot
         {
             LocomotiveId = loco.Id,
@@ -345,9 +342,9 @@ public class TelemetrySimulatorService : BackgroundService
         };
 
         if (loco.Type == LocomotiveType.TE33A)
-            SimulateTE33A(s, prev, speed, overrideParam);
+            SimulateTe33A(s, prev, speed, overrideParam);
         else
-            SimulateKZ8A(s, prev, speed, overrideParam);
+            SimulateKz8A(s, prev, speed, overrideParam);
 
         // Движение по реальному ЖД маршруту
         UpdatePosition(state, speed);
@@ -355,7 +352,7 @@ public class TelemetrySimulatorService : BackgroundService
         return s;
     }
 
-    private void SimulateTE33A(TelemetrySnapshot s, TelemetrySnapshot prev, double speed, string? ovr)
+    private void SimulateTe33A(TelemetrySnapshot s, TelemetrySnapshot prev, double speed, string? ovr)
     {
         // Температура масла: растёт с нагрузкой, медленно меняется
         var oilTarget = speed / 120.0 * 70 + 15;
@@ -423,7 +420,7 @@ public class TelemetrySimulatorService : BackgroundService
             speed / 120.0 * 350 + Gaussian(0, 5), 0, 500);
     }
 
-    private void SimulateKZ8A(TelemetrySnapshot s, TelemetrySnapshot prev, double speed, string? ovr)
+    private void SimulateKz8A(TelemetrySnapshot s, TelemetrySnapshot prev, double speed, string? ovr)
     {
         // Напряжение КС: слегка колеблется вокруг 25 кВ
         var voltage = Lerp(prev.CatenaryVoltage!.Value, 25, 0.01) + Gaussian(0, 0.2);
