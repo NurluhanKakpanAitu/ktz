@@ -15,6 +15,22 @@
     </div>
   </header>
 
+  <!-- Replay controls -->
+  <app-replay-controls
+    [status]="replayStatus"
+    [minutes]="replayMinutes"
+    [speed]="replaySpeed"
+    [position]="replayIndex"
+    [total]="replayData.length"
+    [loading]="replayLoading"
+    (selectMinutes)="onReplayMinutes($event)"
+    (selectSpeed)="onReplaySpeed($event)"
+    (play)="onReplayPlay()"
+    (pause)="onReplayPause()"
+    (stop)="onReplayStop()"
+    (seek)="onReplaySeek($event)">
+  </app-replay-controls>
+
   <!-- Tab Bar -->
   <nav class="tab-bar">
     <button *ngFor="let tab of tabs" class="tab-btn"

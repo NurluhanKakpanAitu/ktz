@@ -20,6 +20,7 @@ import { ConnectionStatusComponent } from './shared/connection-status/connection
 import { TelemetryGridComponent } from './locomotive/telemetry-grid/telemetry-grid.component';
 import { TrendChartsComponent } from './locomotive/trend-chart/trend-charts.component';
 import { LocomotiveDetailComponent } from './locomotive/detail/locomotive-detail.component';
+import { ReplayControlsComponent } from './locomotive/replay-controls/replay-controls.component';
 
 import { AuthGuard } from './services/auth.guard';
 import { AuthInterceptor } from './services/auth.interceptor';
@@ -41,7 +42,8 @@ import { AuthInterceptor } from './services/auth.interceptor';
     ParamChartComponent,
     ConnectionStatusComponent,
     TrendChartsComponent,
-    LocomotiveDetailComponent
+    LocomotiveDetailComponent,
+    ReplayControlsComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),

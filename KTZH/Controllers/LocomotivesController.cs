@@ -102,6 +102,34 @@ public class LocomotivesController : ControllerBase
     }
 
     /// <summary>
+    /// Получить данные для Replay-режима за последние N минут (5/10/15).
+    /// Отсортировано по Timestamp ASC — удобно для последовательного воспроизведения.
+    /// </summary>
+    /// <param name="id">ID локомотива</param>
+    /// <param name="minutes">Окно в минутах (5, 10 или 15). По умолчанию 10.</param>
+    [HttpGet("{id}/replay")]
+    [ProducesResponseType(typeof(List<TelemetryHistory>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<TelemetryHistory>>> GetReplay(string id, [FromQuery] int minutes = 10)
+    {
+        if (!_simulator.Fleet.ContainsKey(id))
+            return NotFound(new { error = $"Локомотив {id} не найден" });
+
+        // Принимаем только 5/10/15, иначе округляем к ближайшему допустимому
+        if (minutes != 5 && minutes != 10 && minutes != 15)
+            minutes = 10;
+
+        var since = DateTime.UtcNow.AddMinutes(-minutes);
+
+        var data = await _db.TelemetryHistory
+            .Where(h => h.LocomotiveId == id && h.Timestamp >= since)
+            .OrderBy(h => h.Timestamp)
+            .ToListAsync();
+
+        return Ok(data);
+    }
+
+    /// <summary>
     /// Получить текущий Health Score с полной расшифровкой компонентов
     /// </summary>
     /// <param name="id">ID локомотива</param>

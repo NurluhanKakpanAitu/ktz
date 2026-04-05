@@ -9,9 +9,6 @@
       <span class="fleet-health" [style.color]="fleetHealthAvg >= 75 ? 'var(--color-normal)' : fleetHealthAvg >= 50 ? 'var(--color-warning)' : 'var(--color-critical)'">
         Парк: {{ fleetHealthAvg }}
       </span>
-      <span class="conn-status" [class.online]="connected">
-        {{ connected ? 'LIVE' : 'OFFLINE' }}
-      </span>
     </div>
     <div class="header-right">
       <button *ngIf="isDev" class="burst-btn" [disabled]="burstRunning" (click)="runBurst()"

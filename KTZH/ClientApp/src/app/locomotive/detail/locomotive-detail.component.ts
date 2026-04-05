@@ -9,6 +9,7 @@ import {
   HealthScore,
   Alert
 } from '../../models/telemetry.models';
+import { ReplayStatus } from '../replay-controls/replay-controls.component';
 
 interface TabDef {
   key: string;
@@ -44,6 +45,18 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
   private alertSub?: Subscription;
   private routeSub?: Subscription;
   private healthInterval?: any;
+
+  // ── Replay state ──
+  replayStatus: ReplayStatus = 'idle';
+  replayMinutes: 5 | 10 | 15 = 10;
+  replaySpeed: 1 | 2 | 5 = 1;
+  replayData: any[] = [];
+  replayIndex = 0;
+  replayLoading = false;
+  private replayTimer?: any;
+  /** Живой снимок, сохранённый на время replay — восстанавливается при Stop */
+  private liveSnapshotBackup: TelemetrySnapshot | null = null;
+  private liveHealthBackup: HealthScore | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -108,7 +121,128 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
     this.telemetrySub?.unsubscribe();
     this.alertSub?.unsubscribe();
     if (this.healthInterval) clearInterval(this.healthInterval);
+    this.clearReplayTimer();
     this.telemetry.joinFleetGroup();
+  }
+
+  // ── Replay controls ──
+
+  onReplayMinutes(m: 5 | 10 | 15): void {
+    this.replayMinutes = m;
+  }
+
+  onReplaySpeed(s: 1 | 2 | 5): void {
+    this.replaySpeed = s;
+    if (this.replayStatus === 'playing') {
+      this.clearReplayTimer();
+      this.startReplayTimer();
+    }
+  }
+
+  onReplayPlay(): void {
+    if (this.replayStatus === 'paused') {
+      this.replayStatus = 'playing';
+      this.startReplayTimer();
+      return;
+    }
+
+    // idle → загрузить данные и начать воспроизведение
+    if (this.replayLoading || !this.id) return;
+    this.replayLoading = true;
+    this.api.getReplay(this.id, this.replayMinutes).subscribe({
+      next: data => {
+        this.replayLoading = false;
+        if (!data || data.length === 0) {
+          console.warn('[Replay] Нет данных за выбранный период');
+          return;
+        }
+        this.replayData = data;
+        this.replayIndex = 0;
+
+        // Приостановить live: сохраняем текущий снимок и отписываемся
+        this.liveSnapshotBackup = this.snapshot;
+        this.liveHealthBackup = this.health;
+        this.telemetrySub?.unsubscribe();
+        this.telemetrySub = undefined;
+
+        this.replayStatus = 'playing';
+        this.applyReplayFrame();
+        this.startReplayTimer();
+      },
+      error: err => {
+        this.replayLoading = false;
+        console.error('[Replay] Ошибка загрузки:', err);
+      }
+    });
+  }
+
+  onReplayPause(): void {
+    if (this.replayStatus !== 'playing') return;
+    this.replayStatus = 'paused';
+    this.clearReplayTimer();
+  }
+
+  onReplayStop(): void {
+    this.clearReplayTimer();
+    this.replayStatus = 'idle';
+    this.replayIndex = 0;
+    this.replayData = [];
+
+    // Восстанавливаем live-подписку
+    if (this.liveSnapshotBackup) {
+      this.snapshot = this.liveSnapshotBackup;
+      this.health = this.liveHealthBackup;
+      this.liveSnapshotBackup = null;
+      this.liveHealthBackup = null;
+    }
+    if (!this.telemetrySub) {
+      this.telemetrySub = this.telemetry.telemetry$.subscribe(s => {
+        if (s.locomotiveId === this.id) {
+          this.snapshot = s;
+        }
+      });
+    }
+  }
+
+  onReplaySeek(index: number): void {
+    if (!this.replayData.length) return;
+    this.replayIndex = Math.max(0, Math.min(index, this.replayData.length - 1));
+    this.applyReplayFrame();
+  }
+
+  private startReplayTimer(): void {
+    const delay = 1000 / this.replaySpeed;
+    this.replayTimer = setInterval(() => {
+      if (this.replayIndex >= this.replayData.length - 1) {
+        this.clearReplayTimer();
+        this.replayStatus = 'paused';
+        return;
+      }
+      this.replayIndex++;
+      this.applyReplayFrame();
+    }, delay);
+  }
+
+  private clearReplayTimer(): void {
+    if (this.replayTimer) {
+      clearInterval(this.replayTimer);
+      this.replayTimer = undefined;
+    }
+  }
+
+  private applyReplayFrame(): void {
+    const point = this.replayData[this.replayIndex];
+    if (!point) return;
+    // TelemetryHistory совместим со TelemetrySnapshot по camelCase полям
+    this.snapshot = point as TelemetrySnapshot;
+    // Восстанавливаем health из точки (TelemetryHistory содержит healthScore/healthGrade)
+    if (point.healthScore != null && point.healthGrade != null && this.health) {
+      this.health = {
+        ...this.health,
+        score: point.healthScore,
+        grade: point.healthGrade
+      };
+    }
   }
 
   goBack(): void {

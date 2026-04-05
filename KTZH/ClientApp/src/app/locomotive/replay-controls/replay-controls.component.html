@@ -1,0 +1,68 @@
+<div class="replay-controls" [class.active]="status !== 'idle'">
+  <div class="replay-row">
+    <span class="replay-title">⏱ Replay</span>
+
+    <!-- Окно -->
+    <div class="btn-group">
+      <button *ngFor="let m of windows"
+              type="button"
+              class="btn-sm"
+              [class.active]="minutes === m"
+              [disabled]="status !== 'idle'"
+              (click)="selectMinutes.emit(m)">
+        {{ m }} мин
+      </button>
+    </div>
+
+    <!-- Play/Pause/Stop -->
+    <div class="btn-group">
+      <button *ngIf="status !== 'playing'"
+              type="button"
+              class="btn-sm primary"
+              [disabled]="loading"
+              (click)="play.emit()"
+              title="Воспроизвести">
+        ▶
+      </button>
+      <button *ngIf="status === 'playing'"
+              type="button"
+              class="btn-sm"
+              (click)="pause.emit()"
+              title="Пауза">
+        ⏸
+      </button>
+      <button type="button"
+              class="btn-sm"
+              [disabled]="status === 'idle'"
+              (click)="stop.emit()"
+              title="Остановить и вернуться к live">
+        ⏹
+      </button>
+    </div>
+
+    <!-- Speed -->
+    <div class="btn-group">
+      <button *ngFor="let s of speeds"
+              type="button"
+              class="btn-sm"
+              [class.active]="speed === s"
+              (click)="selectSpeed.emit(s)">
+        ×{{ s }}
+      </button>
+    </div>
+
+    <span class="replay-counter" *ngIf="status !== 'idle' && total > 0">
+      {{ position + 1 }} / {{ total }}
+    </span>
+    <span class="replay-counter loading" *ngIf="loading">Загрузка...</span>
+  </div>
+
+  <!-- Scrubber -->
+  <input *ngIf="status !== 'idle' && total > 1"
+         type="range"
+         class="replay-scrubber"
+         min="0"
+         [max]="total - 1"
+         [value]="position"
+         (input)="onScrub($event)">
+</div>

@@ -30,6 +30,11 @@ export class ApiService {
     return this.http.get<any[]>(`${this.base}/locomotives/${id}/history?hours=${hours}`);
   }
 
+  /** Replay: данные за последние N минут (5/10/15), отсортировано по Timestamp ASC */
+  getReplay(id: string, minutes: number = 10): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/locomotives/${id}/replay?minutes=${minutes}`);
+  }
+
   /** Health Score с расшифровкой */
   getHealth(id: string): Observable<HealthScore> {
     return this.http.get<HealthScore>(`${this.base}/locomotives/${id}/health`);
