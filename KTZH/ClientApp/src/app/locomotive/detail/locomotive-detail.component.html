@@ -9,6 +9,13 @@
       <span class="header-sep">|</span>
       <span class="loco-depot">Депо: {{ detail.depotCity }}</span>
     </div>
+    <div class="factor-chips" *ngIf="health?.topWorstFactors?.length">
+      <span *ngFor="let f of health!.topWorstFactors"
+            [class]="factorChipClass(f)"
+            [title]="f.parameterName + ' = ' + f.currentValue + ' ' + f.unit + ' (score ' + f.score + ')'">
+        {{ factorShortName(f.parameterName) }} {{ factorArrow(f) }}{{ factorValue(f) }}{{ f.unit }}
+      </span>
+    </div>
     <button class="csv-btn" type="button" (click)="exportCsv()" title="Экспорт телеметрии за 15 мин в CSV">
       ⬇ CSV
     </button>
@@ -129,7 +136,7 @@
     <!-- ТЭ33А -->
     <ng-container *ngIf="isTE33A()">
       <div class="params-grid">
-        <app-param-chart chartType="line" label="Температура масла" unit="°C"
+        <app-param-chart chartType="line+fill" label="Температура масла" unit="°C"
           [value]="snapshot.oilTemperature ?? 0"
           [warningThreshold]="85" [criticalThreshold]="95" thresholdDirection="above"
           [healthContribution]="hc('Температура масла')" [healthWeight]="0.20">
@@ -141,7 +148,7 @@
           [healthContribution]="hc('Давление масла')" [healthWeight]="0.20">
         </app-param-chart>
 
-        <app-param-chart chartType="line" label="Температура охлаждающей жидкости" unit="°C"
+        <app-param-chart chartType="line+fill" label="Температура охлаждающей жидкости" unit="°C"
           [value]="snapshot.coolantTemperature ?? 0"
           [warningThreshold]="90" [criticalThreshold]="105" thresholdDirection="above"
           [healthContribution]="hc('Температура ОЖ')" [healthWeight]="0.15">
@@ -152,7 +159,7 @@
           [warningThreshold]="0.10" [criticalThreshold]="0.07" thresholdDirection="below">
         </app-param-chart>
 
-        <app-param-chart chartType="line" label="Давление воздушного фильтра" unit="кПа"
+        <app-param-chart chartType="line+fill" label="Давление воздушного фильтра" unit="кПа"
           [value]="snapshot.airFilterPressure ?? 0"
           [warningThreshold]="2.5" [criticalThreshold]="3.5" thresholdDirection="above">
         </app-param-chart>
@@ -187,7 +194,7 @@
           [warningThreshold]="0.85" [criticalThreshold]="0.70" thresholdDirection="below">
         </app-param-chart>
 
-        <app-param-chart chartType="line" label="Температура IGBT" unit="°C"
+        <app-param-chart chartType="line+fill" label="Температура IGBT" unit="°C"
           [value]="snapshot.igbtTemperature ?? 0"
           [warningThreshold]="70" [criticalThreshold]="85" thresholdDirection="above">
         </app-param-chart>
@@ -202,13 +209,13 @@
     <!-- ТЭ33А -->
     <ng-container *ngIf="isTE33A()">
       <div class="params-grid">
-        <app-param-chart chartType="line" label="Уровень топлива бак 1" unit="%"
+        <app-param-chart chartType="line+fill" label="Уровень топлива бак 1" unit="%"
           [value]="snapshot.fuelTank1Level ?? 0"
           [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below"
           [healthContribution]="hc('Уровень топлива')" [healthWeight]="0.15">
         </app-param-chart>
 
-        <app-param-chart chartType="line" label="Уровень топлива бак 2" unit="%"
+        <app-param-chart chartType="line+fill" label="Уровень топлива бак 2" unit="%"
           [value]="snapshot.fuelTank2Level ?? 0"
           [warningThreshold]="10" [criticalThreshold]="5" thresholdDirection="below">
         </app-param-chart>
@@ -238,19 +245,19 @@
     <!-- KZ8A -->
     <ng-container *ngIf="!isTE33A()">
       <div class="params-grid">
-        <app-param-chart chartType="line" label="Температура трансформатора" unit="°C"
+        <app-param-chart chartType="line+fill" label="Температура трансформатора" unit="°C"
           [value]="snapshot.transformerTemperature ?? 0"
           [warningThreshold]="80" [criticalThreshold]="95" thresholdDirection="above"
           [healthContribution]="hc('Температура тр-ра')" [healthWeight]="0.20">
         </app-param-chart>
 
-        <app-param-chart chartType="line" label="Температура тяговых двигателей" unit="°C"
+        <app-param-chart chartType="line+fill" label="Температура тяговых двигателей" unit="°C"
           [value]="snapshot.tractionMotorTemperature ?? 0"
           [warningThreshold]="80" [criticalThreshold]="100" thresholdDirection="above"
           [healthContribution]="hc('Температура ТЭД')" [healthWeight]="0.15">
         </app-param-chart>
 
-        <app-param-chart chartType="line" label="Температура IGBT" unit="°C"
+        <app-param-chart chartType="line+fill" label="Температура IGBT" unit="°C"
           [value]="snapshot.igbtTemperature ?? 0"
           [warningThreshold]="70" [criticalThreshold]="85" thresholdDirection="above">
         </app-param-chart>

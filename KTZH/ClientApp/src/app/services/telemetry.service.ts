@@ -128,6 +128,7 @@ export class TelemetryService implements OnDestroy {
   ngOnDestroy(): void {
     this.disconnect();
     this.telemetrySubject.complete();
+    this.healthSubject.complete();
     this.fleetSubject.complete();
     this.alertSubject.complete();
     this.connectedSubject.complete();

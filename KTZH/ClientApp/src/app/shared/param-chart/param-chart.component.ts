@@ -9,14 +9,15 @@ Chart.register(...registerables);
 const MAX_POINTS = 60;
 
 export type ParamChartType =
-  | 'line'           // температуры: fill, цвет по порогам
+  | 'line'           // базовый line (tension 0.3, без fill)
+  | 'line+fill'      // line с заливкой, цвет по статусу (температуры и т.п.)
   | 'line-inverted'  // давления: danger=below, красный fill
   | 'gauge'          // скорость/RPM: SVG полукруг + sparkline
   | 'area-dual'      // баки: два area, разные цвета
-  | 'bar'            // расход: вертикальные бары
+  | 'bar'            // расход/ошибки: вертикальные бары с status-цветом
   | 'zone-line'      // ток/напряжение: line + цветные зоны фона
   | 'step'           // режим двигателя: stepped line
-  | 'area'           // мощность: area без порогов
+  | 'area'           // мощность/топливо: area без порогов
   | 'counter';       // счётчики: только текст
 
 @Component({
@@ -169,6 +170,9 @@ export class ParamChartComponent implements AfterViewInit, OnChanges, OnDestroy 
 
     switch (this.chartType) {
       case 'line':
+        this.createPlainLineChart(ctx);
+        break;
+      case 'line+fill':
       case 'line-inverted':
         this.createLineChart(ctx);
         break;
@@ -194,7 +198,40 @@ export class ParamChartComponent implements AfterViewInit, OnChanges, OnDestroy 
     }
   }
 
-  // ── LINE (temperatures) / LINE-INVERTED (pressures) ──
+  // ── LINE (базовый, без заливки) ──
+  private createPlainLineChart(ctx: HTMLCanvasElement): void {
+    const self = this;
+    const thresholdPlugin = this.buildThresholdPlugin();
+
+    const dynamicColorPlugin = {
+      id: 'dynColorLine_' + this.uid(),
+      beforeDraw: (chart: Chart) => {
+        const color = self.getValueColor();
+        const ds = chart.data.datasets[0];
+        if (ds) ds.borderColor = color;
+      }
+    };
+
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: this.labels,
+        datasets: [{
+          data: this.dataPoints,
+          borderColor: '#22c55e',
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.3
+        }]
+      },
+      options: this.baseOptions(),
+      plugins: [thresholdPlugin, dynamicColorPlugin]
+    });
+  }
+
+  // ── LINE+FILL (температуры) / LINE-INVERTED (давления) ──
   private createLineChart(ctx: HTMLCanvasElement): void {
     const self = this;
     const thresholdPlugin = this.buildThresholdPlugin();

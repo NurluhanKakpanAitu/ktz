@@ -130,8 +130,9 @@ public class LocomotivesController : ControllerBase
     }
 
     /// <summary>
-    /// Экспорт телеметрии в CSV за последние N минут (5–60).
-    /// Колонки: Timestamp, LocomotiveId, SpeedKmh, Temperature, Pressure, FuelOrVoltage, HealthScore, HealthGrade.
+    /// Экспорт всей телеметрии в CSV за последние N минут (5–60).
+    /// Все параметры из дашборда с русскими заголовками колонок.
+    /// Разделитель ; (лучше открывается в русском Excel), BOM UTF-8.
     /// </summary>
     /// <param name="id">ID локомотива</param>
     /// <param name="minutes">Окно в минутах (5–60). По умолчанию 15.</param>
@@ -152,26 +153,100 @@ public class LocomotivesController : ControllerBase
             .OrderBy(h => h.Timestamp)
             .ToListAsync();
 
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("Timestamp,LocomotiveId,SpeedKmh,Temperature,Pressure,FuelOrVoltage,HealthScore,HealthGrade");
+
+        // Заголовки колонок на русском (единицы в заголовке)
+        string[] headers =
+        {
+            "Время",
+            "ID локомотива",
+            "Тип",
+            "Скорость, км/ч",
+            "Давление тормозной, МПа",
+            "Давление главных резервуаров, МПа",
+            "Ток ТЭД, А",
+            "Пробег рейса, км",
+            "Боксование",
+            "Кол-во ошибок",
+            // ТЭ33А
+            "Температура масла, °C",
+            "Температура ОЖ, °C",
+            "Давление масла, МПа",
+            "Давление ОЖ, МПа",
+            "Уровень топлива, %",
+            "Обороты дизеля, об/мин",
+            "Моточасы, ч",
+            "Давление воздушного фильтра, кПа",
+            "Топливо бак 1, %",
+            "Топливо бак 2, %",
+            "Расход топлива, л/ч",
+            "Суммарный расход, л",
+            "Режим двигателя",
+            "Тяговое усилие ТЭ33А, кН",
+            // KZ8A
+            "Температура трансформатора, °C",
+            "Температура ТЭД, °C",
+            "Температура IGBT, °C",
+            "Напряжение КС, кВ",
+            "Ток КС, А",
+            "Тяговое усилие, кН",
+            "Мощность на валу, кВт",
+            "cos φ",
+            "Давление тормозных цилиндров, МПа",
+            // Health
+            "Health Score",
+            "Grade"
+        };
+        sb.AppendLine(string.Join(";", headers));
+
+        string F(double? v, int digits) => v?.ToString("F" + digits, inv) ?? "";
+        string Fd(double v, int digits) => v.ToString("F" + digits, inv);
 
         foreach (var r in rows)
         {
-            // Для ТЭ33А: температура=масло, давление=масло, fuel=уровень топлива
-            // Для KZ8A:  температура=трансформатор, давление=тормозная, fuel=напряжение КС
-            var isTe33a = r.LocomotiveType == LocomotiveType.TE33A;
-            var temp = isTe33a ? r.OilTemperature : r.TransformerTemperature;
-            var press = isTe33a ? r.OilPressure : (double?)r.BrakePressure;
-            var fuelOrVoltage = isTe33a ? r.FuelLevel : r.CatenaryVoltage;
-
-            sb.Append(r.Timestamp.ToString("O")).Append(',')
-              .Append(r.LocomotiveId).Append(',')
-              .Append(r.Speed.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)).Append(',')
-              .Append(temp?.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) ?? "").Append(',')
-              .Append(press?.ToString("F3", System.Globalization.CultureInfo.InvariantCulture) ?? "").Append(',')
-              .Append(fuelOrVoltage?.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) ?? "").Append(',')
-              .Append(r.HealthScore).Append(',')
-              .AppendLine(r.HealthGrade.ToString());
+            var cols = new[]
+            {
+                r.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", inv),
+                r.LocomotiveId,
+                r.LocomotiveType.ToString(),
+                Fd(r.Speed, 2),
+                Fd(r.BrakePressure, 3),
+                Fd(r.MainReservoirPressure, 3),
+                Fd(r.TractionMotorCurrent, 1),
+                Fd(r.TripDistance, 3),
+                r.WheelSlip ? "да" : "нет",
+                r.ActiveErrorCount.ToString(inv),
+                // ТЭ33А
+                F(r.OilTemperature, 1),
+                F(r.CoolantTemperature, 1),
+                F(r.OilPressure, 3),
+                F(r.CoolantPressure, 3),
+                F(r.FuelLevel, 1),
+                F(r.DieselRpm, 0),
+                F(r.EngineHours, 1),
+                F(r.AirFilterPressure, 1),
+                F(r.FuelTank1Level, 1),
+                F(r.FuelTank2Level, 1),
+                F(r.InstantFuelRate, 1),
+                F(r.TotalFuelConsumed, 1),
+                r.EngineMode ?? "",
+                F(r.TractiveEffortTE, 1),
+                // KZ8A
+                F(r.TransformerTemperature, 1),
+                F(r.TractionMotorTemperature, 1),
+                F(r.IgbtTemperature, 1),
+                F(r.CatenaryVoltage, 2),
+                F(r.CatenaryCurrent, 1),
+                F(r.TractiveEffort, 1),
+                F(r.ShaftPower, 0),
+                F(r.PowerFactor, 3),
+                F(r.BrakeCylinderPressure, 3),
+                // Health
+                r.HealthScore.ToString(inv),
+                r.HealthGrade.ToString()
+            };
+            sb.AppendLine(string.Join(";", cols));
         }
 
         // UTF-8 BOM для корректного открытия в Excel

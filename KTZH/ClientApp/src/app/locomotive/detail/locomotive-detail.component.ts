@@ -7,6 +7,7 @@ import {
   LocomotiveDetailDto,
   TelemetrySnapshot,
   HealthScore,
+  HealthFactor,
   Alert
 } from '../../models/telemetry.models';
 import { ReplayStatus } from '../replay-controls/replay-controls.component';
@@ -42,6 +43,7 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
   ];
 
   private telemetrySub?: Subscription;
+  private healthSub?: Subscription;
   private alertSub?: Subscription;
   private routeSub?: Subscription;
   private healthInterval?: any;
@@ -77,6 +79,7 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
   private loadLocomotive(newId: string): void {
     // Cleanup previous
     this.telemetrySub?.unsubscribe();
+    this.healthSub?.unsubscribe();
     this.alertSub?.unsubscribe();
     if (this.healthInterval) clearInterval(this.healthInterval);
 
@@ -101,12 +104,12 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.healthInterval = setInterval(() => {
-      if (!this.id) return;
-      this.api.getHealth(this.id).subscribe(h => {
+    // Health через SignalR каждую секунду (с top-3 факторами)
+    this.healthSub = this.telemetry.health$.subscribe(h => {
+      if (h.locomotiveId === this.id && this.replayStatus === 'idle') {
         this.health = h;
-      });
-    }, 5000);
+      }
+    });
 
     this.alertSub = this.telemetry.alert$.subscribe(alert => {
       if (alert.locomotiveId === this.id) {
@@ -119,6 +122,7 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.telemetrySub?.unsubscribe();
+    this.healthSub?.unsubscribe();
     this.alertSub?.unsubscribe();
     if (this.healthInterval) clearInterval(this.healthInterval);
     this.clearReplayTimer();
@@ -315,5 +319,46 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
   hc(name: string): number {
     if (!this.health?.componentScores) return 100;
     return this.health.componentScores[name] ?? 100;
+  }
+
+  /** CSS-класс для чипа фактора в зависимости от его Score */
+  factorChipClass(f: HealthFactor): string {
+    if (f.score < 60) return 'factor-chip critical';
+    if (f.score < 80) return 'factor-chip warning';
+    return 'factor-chip ok';
+  }
+
+  /** Стрелка направления фактора: ↑ если плохо когда выше, ↓ если плохо когда ниже */
+  factorArrow(f: HealthFactor): string {
+    return f.direction === 'above' ? '↑' : '↓';
+  }
+
+  /** Короткое имя параметра для чипа */
+  factorShortName(name: string): string {
+    const map: Record<string, string> = {
+      'Температура масла': 'Т°масла',
+      'Температура ОЖ': 'Т°ОЖ',
+      'Давление масла': 'Давл.масла',
+      'Давление тормозной': 'Давл.торм',
+      'Уровень топлива': 'Топливо',
+      'Обороты дизеля': 'Обороты',
+      'Ток ТЭД': 'Ток ТЭД',
+      'Напряжение КС': 'Напр.КС',
+      'Температура трансформатора': 'Т°тр-ра',
+      'Температура ТЭД': 'Т°ТЭД',
+      'Температура IGBT': 'Т°IGBT'
+    };
+    return map[name] ?? name;
+  }
+
+  /** Форматированное значение фактора для чипа */
+  factorValue(f: HealthFactor): string {
+    const v = f.currentValue;
+    // Давление/cosφ — с 2 знаками; проценты и температуры — без дробной части
+    if (f.unit === 'МПа' || f.unit === '') return v.toFixed(2);
+    if (f.unit === '°C' || f.unit === '%' || f.unit === 'кВ' || f.unit === 'об/мин' || f.unit === 'А') {
+      return Math.round(v).toString();
+    }
+    return v.toFixed(1);
   }
 }
