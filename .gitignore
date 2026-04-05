@@ -24,3 +24,7 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Private docs
+CLAUDE.md
+TASK.md
