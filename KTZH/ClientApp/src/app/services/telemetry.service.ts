@@ -1,5 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { Subject, Observable } from 'rxjs';
+import { Subject, BehaviorSubject, Observable } from 'rxjs';
+
+export type ConnectionState = 'connected' | 'reconnecting' | 'disconnected';
 import * as signalR from '@microsoft/signalr';
 import {
   TelemetrySnapshot,
@@ -23,6 +25,7 @@ export class TelemetryService implements OnDestroy {
   private fleetSubject = new Subject<LocomotiveState[]>();
   private alertSubject = new Subject<Alert>();
   private connectedSubject = new Subject<boolean>();
+  private connectionStateSubject = new BehaviorSubject<ConnectionState>('disconnected');
 
   /** Телеметрия конкретного локомотива (детальный вид) */
   telemetry$: Observable<TelemetrySnapshot> = this.telemetrySubject.asObservable();
@@ -33,8 +36,11 @@ export class TelemetryService implements OnDestroy {
   /** Алерты (broadcast) */
   alert$: Observable<Alert> = this.alertSubject.asObservable();
 
-  /** Статус подключения */
+  /** Статус подключения (boolean, legacy) */
   connected$: Observable<boolean> = this.connectedSubject.asObservable();
+
+  /** Детальный статус SignalR: connected | reconnecting | disconnected */
+  connectionState$: Observable<ConnectionState> = this.connectionStateSubject.asObservable();
 
   private currentLocomotiveId: string | null = null;
 
@@ -64,7 +70,7 @@ export class TelemetryService implements OnDestroy {
         transport: signalR.HttpTransportType.WebSockets,
         accessTokenFactory: () => getToken()
       })
-      .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 30000])
+      .withAutomaticReconnect([1000, 2000, 4000, 8000, 15000, 30000])
       .configureLogging(signalR.LogLevel.Warning)
       .build();
 
@@ -76,10 +82,12 @@ export class TelemetryService implements OnDestroy {
     try {
       await this.connection.start();
       this.connectedSubject.next(true);
+      this.connectionStateSubject.next('connected');
       console.log('[SignalR] Подключено', locomotiveId ? `loco-${locomotiveId}` : 'fleet');
     } catch (err) {
       console.error('[SignalR] Ошибка подключения:', err);
       this.connectedSubject.next(false);
+      this.connectionStateSubject.next('disconnected');
     }
   }
 
@@ -108,6 +116,7 @@ export class TelemetryService implements OnDestroy {
       this.connection = null;
       this.currentLocomotiveId = null;
       this.connectedSubject.next(false);
+      this.connectionStateSubject.next('disconnected');
     }
   }
 
@@ -141,16 +150,29 @@ export class TelemetryService implements OnDestroy {
     this.connection.onreconnecting(() => {
       console.log('[SignalR] Переподключение...');
       this.connectedSubject.next(false);
+      this.connectionStateSubject.next('reconnecting');
     });
 
-    this.connection.onreconnected(() => {
+    this.connection.onreconnected(async () => {
       console.log('[SignalR] Переподключено');
       this.connectedSubject.next(true);
+      this.connectionStateSubject.next('connected');
+      // Восстанавливаем группу после reconnect (при reconnect сервер теряет членство)
+      try {
+        if (this.currentLocomotiveId) {
+          await this.connection!.invoke('JoinLocomotiveGroup', this.currentLocomotiveId);
+        } else {
+          await this.connection!.invoke('JoinFleetGroup', null);
+        }
+      } catch (err) {
+        console.warn('[SignalR] Не удалось восстановить группу после reconnect:', err);
+      }
     });
 
     this.connection.onclose(() => {
       console.log('[SignalR] Соединение закрыто');
       this.connectedSubject.next(false);
+      this.connectionStateSubject.next('disconnected');
     });
   }
 }

@@ -16,7 +16,14 @@ public class TelemetrySimulatorService : BackgroundService
     private readonly IHubContext<TelemetryHub> _hub;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<TelemetrySimulatorService> _logger;
+    private readonly HealthScoreEngine _healthEngine;
     private readonly Random _rng = new();
+
+    /// <summary>EMA-состояние: locomotiveId → (fieldName → smoothedValue).</summary>
+    private readonly Dictionary<string, Dictionary<string, double>> _emaState = new();
+
+    /// <summary>Коэффициент EMA: новое значение = α·raw + (1-α)·prev. α=0.2 → сглаживание шума ~80%.</summary>
+    private const double EmaAlpha = 0.2;
 
     /// <summary>Текущее состояние всех локомотивов (доступно контроллерам)</summary>
     public ConcurrentDictionary<string, LocomotiveState> Fleet { get; } = new();
@@ -37,11 +44,13 @@ public class TelemetrySimulatorService : BackgroundService
     public TelemetrySimulatorService(
         IHubContext<TelemetryHub> hub,
         IServiceScopeFactory scopeFactory,
-        ILogger<TelemetrySimulatorService> logger)
+        ILogger<TelemetrySimulatorService> logger,
+        HealthScoreEngine healthEngine)
     {
         _hub = hub;
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _healthEngine = healthEngine;
 
         InitializeFleet();
 
@@ -81,7 +90,8 @@ public class TelemetrySimulatorService : BackgroundService
         foreach (var state in Fleet.Values)
         {
             var snapshot = SimulateTelemetry(state);
-            var health = HealthScoreEngine.Calculate(snapshot);
+            ApplyEma(snapshot);
+            var health = _healthEngine.Calculate(snapshot);
 
             state.LastTelemetry = snapshot;
             state.LastHealth = health;
@@ -119,7 +129,8 @@ public class TelemetrySimulatorService : BackgroundService
             foreach (var state in Fleet.Values)
             {
                 var snapshot = SimulateTelemetry(state);
-                var health = HealthScoreEngine.Calculate(snapshot);
+                ApplyEma(snapshot);
+                var health = _healthEngine.Calculate(snapshot);
                 state.LastTelemetry = snapshot;
                 state.LastHealth = health;
 
@@ -232,8 +243,66 @@ public class TelemetrySimulatorService : BackgroundService
         }
 
         state.LastTelemetry = s;
-        state.LastHealth = HealthScoreEngine.Calculate(s);
+        state.LastHealth = _healthEngine.Calculate(s);
     }
+
+    // ── EMA сглаживание ──
+
+    /// <summary>Применить EMA ко всем числовым полям снимка: ema = α·raw + (1-α)·prev.</summary>
+    private void ApplyEma(TelemetrySnapshot s)
+    {
+        if (!_emaState.TryGetValue(s.LocomotiveId, out var state))
+        {
+            state = new Dictionary<string, double>();
+            _emaState[s.LocomotiveId] = state;
+        }
+
+        // Общие
+        s.Speed = Smooth(state, nameof(s.Speed), s.Speed);
+        s.BrakePressure = Smooth(state, nameof(s.BrakePressure), s.BrakePressure);
+        s.TractionMotorCurrent = Smooth(state, nameof(s.TractionMotorCurrent), s.TractionMotorCurrent);
+        s.TripDistance = Smooth(state, nameof(s.TripDistance), s.TripDistance);
+        s.MainReservoirPressure = Smooth(state, nameof(s.MainReservoirPressure), s.MainReservoirPressure);
+
+        // Опциональные
+        s.OilTemperature = SmoothNullable(state, nameof(s.OilTemperature), s.OilTemperature);
+        s.CoolantTemperature = SmoothNullable(state, nameof(s.CoolantTemperature), s.CoolantTemperature);
+        s.OilPressure = SmoothNullable(state, nameof(s.OilPressure), s.OilPressure);
+        s.FuelLevel = SmoothNullable(state, nameof(s.FuelLevel), s.FuelLevel);
+        s.DieselRpm = SmoothNullable(state, nameof(s.DieselRpm), s.DieselRpm);
+        s.TransformerTemperature = SmoothNullable(state, nameof(s.TransformerTemperature), s.TransformerTemperature);
+        s.TractionMotorTemperature = SmoothNullable(state, nameof(s.TractionMotorTemperature), s.TractionMotorTemperature);
+        s.CatenaryVoltage = SmoothNullable(state, nameof(s.CatenaryVoltage), s.CatenaryVoltage);
+        s.TractiveEffort = SmoothNullable(state, nameof(s.TractiveEffort), s.TractiveEffort);
+        s.BrakeCylinderPressure = SmoothNullable(state, nameof(s.BrakeCylinderPressure), s.BrakeCylinderPressure);
+        s.EngineHours = SmoothNullable(state, nameof(s.EngineHours), s.EngineHours);
+        s.CoolantPressure = SmoothNullable(state, nameof(s.CoolantPressure), s.CoolantPressure);
+        s.AirFilterPressure = SmoothNullable(state, nameof(s.AirFilterPressure), s.AirFilterPressure);
+        s.FuelTank1Level = SmoothNullable(state, nameof(s.FuelTank1Level), s.FuelTank1Level);
+        s.FuelTank2Level = SmoothNullable(state, nameof(s.FuelTank2Level), s.FuelTank2Level);
+        s.InstantFuelRate = SmoothNullable(state, nameof(s.InstantFuelRate), s.InstantFuelRate);
+        s.TotalFuelConsumed = SmoothNullable(state, nameof(s.TotalFuelConsumed), s.TotalFuelConsumed);
+        s.TractiveEffortTE = SmoothNullable(state, nameof(s.TractiveEffortTE), s.TractiveEffortTE);
+        s.CatenaryCurrent = SmoothNullable(state, nameof(s.CatenaryCurrent), s.CatenaryCurrent);
+        s.ShaftPower = SmoothNullable(state, nameof(s.ShaftPower), s.ShaftPower);
+        s.PowerFactor = SmoothNullable(state, nameof(s.PowerFactor), s.PowerFactor);
+        s.IgbtTemperature = SmoothNullable(state, nameof(s.IgbtTemperature), s.IgbtTemperature);
+    }
+
+    private static double Smooth(Dictionary<string, double> state, string key, double raw)
+    {
+        if (!state.TryGetValue(key, out var prev))
+        {
+            state[key] = raw;
+            return raw;
+        }
+        var ema = EmaAlpha * raw + (1 - EmaAlpha) * prev;
+        state[key] = ema;
+        return ema;
+    }
+
+    private static double? SmoothNullable(Dictionary<string, double> state, string key, double? raw)
+        => raw.HasValue ? Smooth(state, key, raw.Value) : null;
 
     // ── Симуляция телеметрии (физически правдоподобные изменения) ──
 

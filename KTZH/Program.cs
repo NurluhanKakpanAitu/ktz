@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using KTZH.Configuration;
 using KTZH.Data;
 using KTZH.Hubs;
 using KTZH.Services;
@@ -121,6 +122,12 @@ try
                   .AllowCredentials();
         });
     });
+
+    // Конфигурация порогов Warning/Critical из appsettings.json
+    builder.Services.Configure<ThresholdConfig>(builder.Configuration.GetSection("ThresholdConfig"));
+
+    // Движок расчёта Health Score (Singleton — потребляет IOptions<ThresholdConfig>)
+    builder.Services.AddSingleton<HealthScoreEngine>();
 
     // Телеметрия симулятор (Singleton — доступен контроллерам)
     builder.Services.AddSingleton<TelemetrySimulatorService>();

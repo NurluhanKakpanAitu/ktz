@@ -16,6 +16,7 @@ import { HealthGaugeComponent } from './shared/health-gauge/health-gauge.compone
 import { MetricCardComponent } from './shared/metric-card/metric-card.component';
 import { SharedTrendChartComponent } from './shared/trend-chart/trend-chart.component';
 import { ParamChartComponent } from './shared/param-chart/param-chart.component';
+import { ConnectionStatusComponent } from './shared/connection-status/connection-status.component';
 import { TelemetryGridComponent } from './locomotive/telemetry-grid/telemetry-grid.component';
 import { TrendChartsComponent } from './locomotive/trend-chart/trend-charts.component';
 import { LocomotiveDetailComponent } from './locomotive/detail/locomotive-detail.component';
@@ -38,6 +39,7 @@ import { AuthInterceptor } from './services/auth.interceptor';
     TelemetryGridComponent,
     SharedTrendChartComponent,
     ParamChartComponent,
+    ConnectionStatusComponent,
     TrendChartsComponent,
     LocomotiveDetailComponent
   ],

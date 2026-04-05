@@ -1,17 +1,27 @@
+using KTZH.Configuration;
 using KTZH.Models;
+using Microsoft.Extensions.Options;
 
 namespace KTZH.Services;
 
 /// <summary>
 /// Движок расчёта индекса здоровья локомотива (0–100, грейд A–E).
 /// Прозрачная логика: каждый компонент нормируется линейно между Warning и Critical.
+/// Пороги загружаются из <see cref="ThresholdConfig"/> (appsettings.json).
 /// </summary>
-public static class HealthScoreEngine
+public class HealthScoreEngine
 {
+    private readonly ThresholdConfig _thresholds;
+
+    public HealthScoreEngine(IOptions<ThresholdConfig> thresholds)
+    {
+        _thresholds = thresholds.Value;
+    }
+
     /// <summary>
     /// Рассчитать Health Score для снимка телеметрии
     /// </summary>
-    public static HealthScore Calculate(TelemetrySnapshot snapshot)
+    public HealthScore Calculate(TelemetrySnapshot snapshot)
     {
         var components = snapshot.LocomotiveType == LocomotiveType.TE33A
             ? CalculateTE33A(snapshot)
@@ -70,62 +80,71 @@ public static class HealthScoreEngine
 
     // ── ТЭ33А (тепловоз) ──
 
-    private static List<ComponentScore> CalculateTE33A(TelemetrySnapshot s)
+    private List<ComponentScore> CalculateTE33A(TelemetrySnapshot s)
     {
+        var t = _thresholds.TE33A;
         return new List<ComponentScore>
         {
-            // Температура масла: норма 45–85, warning 85–95, critical >95
-            Normalize("Температура масла", "°C", s.OilTemperature ?? 65, 85, 95, 0.20, ascending: true, normalMin: 45),
+            // Температура масла
+            NormalizeFromThreshold("Температура масла", "°C", s.OilTemperature ?? 65, t.OilTemperature, 0.20, normalBound: 45),
 
-            // Температура ОЖ: норма 70–90, warning 90–100, critical >105
-            Normalize("Температура ОЖ", "°C", s.CoolantTemperature ?? 80, 90, 105, 0.15, ascending: true, normalMin: 70),
+            // Температура ОЖ
+            NormalizeFromThreshold("Температура ОЖ", "°C", s.CoolantTemperature ?? 80, t.CoolantTemperature, 0.15, normalBound: 70),
 
-            // Давление масла: норма 0.49–1.03, warning 0.30–0.49, critical <0.30 (инвертировано)
-            Normalize("Давление масла", "МПа", s.OilPressure ?? 0.75, 0.49, 0.30, 0.20, ascending: false, normalMin: 1.03),
+            // Давление масла (below)
+            NormalizeFromThreshold("Давление масла", "МПа", s.OilPressure ?? 0.75, t.OilPressure, 0.20, normalBound: 1.03),
 
-            // Давление тормозной: норма 0.50–0.90, warning 0.35–0.50, critical <0.35 (инвертировано)
-            Normalize("Давление тормозной", "МПа", s.BrakePressure, 0.50, 0.35, 0.10, ascending: false, normalMin: 0.90),
+            // Давление тормозной (below) — берём из appsettings
+            NormalizeFromThreshold("Давление тормозной", "МПа", s.BrakePressure, t.BrakeLinePressure, 0.10, normalBound: 0.90),
 
-            // Уровень топлива: норма 20–100, warning 10–20, critical <10 (инвертировано)
-            Normalize("Уровень топлива", "%", s.FuelLevel ?? 80, 20, 10, 0.15, ascending: false, normalMin: 100),
+            // Уровень топлива (below)
+            NormalizeFromThreshold("Уровень топлива", "%", s.FuelLevel ?? 80, t.FuelTank, 0.15, normalBound: 100),
 
-            // Обороты дизеля: норма 320–1050, critical >1100
-            Normalize("Обороты дизеля", "об/мин", s.DieselRpm ?? 700, 1050, 1100, 0.10, ascending: true, normalMin: 320),
+            // Обороты дизеля
+            NormalizeFromThreshold("Обороты дизеля", "об/мин", s.DieselRpm ?? 700, t.EngineRpm, 0.10, normalBound: 320),
 
-            // Ток ТЭД: норма 0–900, warning 900–1000, critical >1000
+            // Ток ТЭД — нет в конфиге, оставляем хардкод
             Normalize("Ток ТЭД", "А", s.TractionMotorCurrent, 900, 1000, 0.10, ascending: true, normalMin: 0),
         };
     }
 
     // ── KZ8A (электровоз) ──
 
-    private static List<ComponentScore> CalculateKZ8A(TelemetrySnapshot s)
+    private List<ComponentScore> CalculateKZ8A(TelemetrySnapshot s)
     {
+        var t = _thresholds.KZ8A;
         return new List<ComponentScore>
         {
-            // Напряжение КС: норма 22–28, warning 18–22, critical <18 (инвертировано)
-            Normalize("Напряжение КС", "кВ", s.CatenaryVoltage ?? 25, 22, 18, 0.25, ascending: false, normalMin: 28),
+            // Напряжение КС (below)
+            NormalizeFromThreshold("Напряжение КС", "кВ", s.CatenaryVoltage ?? 25, t.ContactVoltage, 0.25, normalBound: 28),
 
-            // Температура трансформатора: норма 40–80, warning 80–90, critical >95
-            Normalize("Температура трансформатора", "°C", s.TransformerTemperature ?? 60, 80, 95, 0.20, ascending: true, normalMin: 40),
+            // Температура трансформатора
+            NormalizeFromThreshold("Температура трансформатора", "°C", s.TransformerTemperature ?? 60, t.TransformerTemp, 0.20, normalBound: 40),
 
-            // Температура ТЭД: норма 0–80, warning 80–95, critical >100
-            Normalize("Температура ТЭД", "°C", s.TractionMotorTemperature ?? 50, 80, 100, 0.15, ascending: true, normalMin: 0),
+            // Температура ТЭД
+            NormalizeFromThreshold("Температура ТЭД", "°C", s.TractionMotorTemperature ?? 50, t.TractionMotorTemp, 0.15, normalBound: 0),
 
-            // Давление тормозной: норма 0.50–0.90, warning 0.35–0.50, critical <0.35 (инвертировано)
+            // Температура IGBT
+            NormalizeFromThreshold("Температура IGBT", "°C", s.IgbtTemperature ?? 40, t.IgbtTemp, 0.10, normalBound: 20),
+
+            // Давление тормозной — нет в KZ8A конфиге, используем общий хардкод
             Normalize("Давление тормозной", "МПа", s.BrakePressure, 0.50, 0.35, 0.15, ascending: false, normalMin: 0.90),
 
-            // Ток ТЭД: норма 0–1200, warning 1200–1400, critical >1400
+            // Ток ТЭД — нет в конфиге
             Normalize("Ток ТЭД", "А", s.TractionMotorCurrent, 1200, 1400, 0.15, ascending: true, normalMin: 0),
-            
         };
+    }
+
+    /// <summary>Нормализация с порогом из конфига</summary>
+    private static ComponentScore NormalizeFromThreshold(
+        string name, string unit, double value, Threshold threshold, double weight, double normalBound)
+    {
+        var ascending = threshold.Direction.Equals("above", StringComparison.OrdinalIgnoreCase);
+        return Normalize(name, unit, value, threshold.Warning, threshold.Critical, weight, ascending, normalBound);
     }
 
     /// <summary>
     /// Нормализация значения в балл 0–100 с плавной градацией по всему диапазону.
-    /// Нормальный диапазон: 80–100 (пропорционально расстоянию до warning).
-    /// Warning зона: 30–80.
-    /// Critical зона: 0–30.
     /// ascending=true: значение растёт → хуже (температура, обороты).
     /// ascending=false: значение падает → хуже (давление, топливо, напряжение).
     /// </summary>
@@ -139,36 +158,28 @@ public static class HealthScoreEngine
 
         if (ascending)
         {
-            // ascending: normalMin ... warningThreshold ... criticalThreshold
-            // Чем выше значение, тем хуже
             var safeMin = double.IsNaN(normalMin) ? warningThreshold * 0.5 : normalMin;
 
             if (value >= criticalThreshold)
                 score = 0;
             else if (value >= warningThreshold)
-                // Warning зона: 30–80
                 score = 80.0 - 50.0 * (value - warningThreshold) / (criticalThreshold - warningThreshold);
             else if (value <= safeMin)
                 score = 100;
             else
-                // Нормальный диапазон: 80–100
                 score = 100.0 - 20.0 * (value - safeMin) / (warningThreshold - safeMin);
         }
         else
         {
-            // descending: criticalThreshold ... warningThreshold ... normalMax
-            // Чем ниже значение, тем хуже
             var safeMax = double.IsNaN(normalMin) ? warningThreshold * 1.5 : normalMin;
 
             if (value <= criticalThreshold)
                 score = 0;
             else if (value <= warningThreshold)
-                // Warning зона: 30–80
                 score = 80.0 - 50.0 * (warningThreshold - value) / (warningThreshold - criticalThreshold);
             else if (value >= safeMax)
                 score = 100;
             else
-                // Нормальный диапазон: 80–100
                 score = 100.0 - 20.0 * (safeMax - value) / (safeMax - warningThreshold);
         }
 

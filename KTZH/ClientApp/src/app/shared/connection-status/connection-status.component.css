@@ -1,0 +1,45 @@
+.conn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  line-height: 1;
+  user-select: none;
+}
+
+.conn-icon {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.conn-label {
+  white-space: nowrap;
+}
+
+.state-connected {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.state-reconnecting {
+  background: rgba(245, 158, 11, 0.14);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.state-disconnected {
+  background: rgba(239, 68, 68, 0.14);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
