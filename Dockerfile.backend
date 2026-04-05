@@ -1,0 +1,24 @@
+# ── Stage 1: Build .NET API (без SPA) ──
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+WORKDIR /src
+
+COPY global.json ./
+COPY KTZH/KTZH.csproj KTZH/
+RUN dotnet restore KTZH/KTZH.csproj
+
+COPY KTZH/ KTZH/
+RUN dotnet publish KTZH/KTZH.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore \
+    /p:SkipSpaBuild=true
+
+# ── Stage 2: Runtime ──
+FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS runtime
+WORKDIR /app
+RUN mkdir -p /data
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+EXPOSE 8080
+COPY --from=build /app/publish ./
+ENTRYPOINT ["dotnet", "KTZH.dll"]

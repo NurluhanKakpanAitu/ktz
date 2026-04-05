@@ -1,0 +1,50 @@
+services:
+  ktz-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ktz-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      # Connection string
+      - ConnectionStrings__Default=DataSource=/data/ktz.db
+      # Auth (секреты из .env)
+      - Auth__Login=${AUTH_LOGIN}
+      - Auth__Password=${AUTH_PASSWORD}
+      # JWT (секреты из .env)
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+      - Jwt__ExpireMinutes=${JWT_EXPIRE_MINUTES}
+      # Logging
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft=Warning
+    volumes:
+      - ./data:/data
+    networks:
+      - ktz-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ktz-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ktz-web
+    ports:
+      - "5000:80"
+    depends_on:
+      ktz-api:
+        condition: service_healthy
+    networks:
+      - ktz-net
+    restart: unless-stopped
+
+networks:
+  ktz-net:
+    driver: bridge
