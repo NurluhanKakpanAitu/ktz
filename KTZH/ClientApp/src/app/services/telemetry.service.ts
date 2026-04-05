@@ -6,7 +6,8 @@ import * as signalR from '@microsoft/signalr';
 import {
   TelemetrySnapshot,
   LocomotiveState,
-  Alert
+  Alert,
+  HealthScore
 } from '../models/telemetry.models';
 
 // Бэкенд URL: через Angular proxy (dev) или напрямую (prod)
@@ -22,6 +23,7 @@ export class TelemetryService implements OnDestroy {
   private connection: signalR.HubConnection | null = null;
 
   private telemetrySubject = new Subject<TelemetrySnapshot>();
+  private healthSubject = new Subject<HealthScore>();
   private fleetSubject = new Subject<LocomotiveState[]>();
   private alertSubject = new Subject<Alert>();
   private connectedSubject = new Subject<boolean>();
@@ -29,6 +31,9 @@ export class TelemetryService implements OnDestroy {
 
   /** Телеметрия конкретного локомотива (детальный вид) */
   telemetry$: Observable<TelemetrySnapshot> = this.telemetrySubject.asObservable();
+
+  /** Health Score с top-3 факторами — приходит каждую секунду вместе с телеметрией */
+  health$: Observable<HealthScore> = this.healthSubject.asObservable();
 
   /** Состояние всего парка (диспетчерский вид, каждые 5 сек) */
   fleet$: Observable<LocomotiveState[]> = this.fleetSubject.asObservable();
@@ -131,8 +136,9 @@ export class TelemetryService implements OnDestroy {
   private registerHandlers(): void {
     if (!this.connection) return;
 
-    this.connection.on('ReceiveTelemetry', (snapshot: TelemetrySnapshot) => {
+    this.connection.on('ReceiveTelemetry', (snapshot: TelemetrySnapshot, health?: HealthScore) => {
       this.telemetrySubject.next(snapshot);
+      if (health) this.healthSubject.next(health);
     });
 
     this.connection.on('ReceiveFleet', (fleet: LocomotiveState[]) => {

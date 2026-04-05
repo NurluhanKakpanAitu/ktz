@@ -35,6 +35,13 @@ export class ApiService {
     return this.http.get<any[]>(`${this.base}/locomotives/${id}/replay?minutes=${minutes}`);
   }
 
+  /** Экспорт телеметрии в CSV за последние N минут (5–60) */
+  exportCsv(id: string, minutes: number = 15): Observable<Blob> {
+    return this.http.get(`${this.base}/locomotives/${id}/export?minutes=${minutes}`, {
+      responseType: 'blob'
+    });
+  }
+
   /** Health Score с расшифровкой */
   getHealth(id: string): Observable<HealthScore> {
     return this.http.get<HealthScore>(`${this.base}/locomotives/${id}/health`);

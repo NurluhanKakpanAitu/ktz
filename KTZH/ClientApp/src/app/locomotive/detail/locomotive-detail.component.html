@@ -9,6 +9,9 @@
       <span class="header-sep">|</span>
       <span class="loco-depot">Депо: {{ detail.depotCity }}</span>
     </div>
+    <button class="csv-btn" type="button" (click)="exportCsv()" title="Экспорт телеметрии за 15 мин в CSV">
+      ⬇ CSV
+    </button>
     <div class="header-health" *ngIf="health">
       <span class="health-number" [style.color]="gradeColor(health.grade)">{{ health.score }}</span>
       <span class="health-grade-badge" [style.background]="gradeColor(health.grade)">{{ health.grade }}</span>

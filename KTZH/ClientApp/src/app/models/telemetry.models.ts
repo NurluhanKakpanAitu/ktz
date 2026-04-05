@@ -50,6 +50,15 @@ export interface TelemetrySnapshot {
   igbtTemperature?: number;
 }
 
+export interface HealthFactor {
+  parameterName: string;
+  score: number;
+  currentValue: number;
+  unit: string;
+  /** "above" — плохо когда выше; "below" — плохо когда ниже */
+  direction: string;
+}
+
 export interface HealthScore {
   locomotiveId: string;
   score: number;
@@ -57,6 +66,7 @@ export interface HealthScore {
   componentScores: Record<string, number>;
   activeAlerts: string[];
   calculatedAt: string;
+  topWorstFactors: HealthFactor[];
 }
 
 export interface Locomotive {

@@ -130,6 +130,62 @@ public class LocomotivesController : ControllerBase
     }
 
     /// <summary>
+    /// Экспорт телеметрии в CSV за последние N минут (5–60).
+    /// Колонки: Timestamp, LocomotiveId, SpeedKmh, Temperature, Pressure, FuelOrVoltage, HealthScore, HealthGrade.
+    /// </summary>
+    /// <param name="id">ID локомотива</param>
+    /// <param name="minutes">Окно в минутах (5–60). По умолчанию 15.</param>
+    [HttpGet("{id}/export")]
+    [Produces("text/csv")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ExportCsv(string id, [FromQuery] int minutes = 15)
+    {
+        if (!_simulator.Fleet.ContainsKey(id))
+            return NotFound(new { error = $"Локомотив {id} не найден" });
+
+        minutes = Math.Clamp(minutes, 5, 60);
+        var since = DateTime.UtcNow.AddMinutes(-minutes);
+
+        var rows = await _db.TelemetryHistory
+            .Where(h => h.LocomotiveId == id && h.Timestamp >= since)
+            .OrderBy(h => h.Timestamp)
+            .ToListAsync();
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Timestamp,LocomotiveId,SpeedKmh,Temperature,Pressure,FuelOrVoltage,HealthScore,HealthGrade");
+
+        foreach (var r in rows)
+        {
+            // Для ТЭ33А: температура=масло, давление=масло, fuel=уровень топлива
+            // Для KZ8A:  температура=трансформатор, давление=тормозная, fuel=напряжение КС
+            var isTe33a = r.LocomotiveType == LocomotiveType.TE33A;
+            var temp = isTe33a ? r.OilTemperature : r.TransformerTemperature;
+            var press = isTe33a ? r.OilPressure : (double?)r.BrakePressure;
+            var fuelOrVoltage = isTe33a ? r.FuelLevel : r.CatenaryVoltage;
+
+            sb.Append(r.Timestamp.ToString("O")).Append(',')
+              .Append(r.LocomotiveId).Append(',')
+              .Append(r.Speed.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)).Append(',')
+              .Append(temp?.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) ?? "").Append(',')
+              .Append(press?.ToString("F3", System.Globalization.CultureInfo.InvariantCulture) ?? "").Append(',')
+              .Append(fuelOrVoltage?.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) ?? "").Append(',')
+              .Append(r.HealthScore).Append(',')
+              .AppendLine(r.HealthGrade.ToString());
+        }
+
+        // UTF-8 BOM для корректного открытия в Excel
+        var bom = new byte[] { 0xEF, 0xBB, 0xBF };
+        var body = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+        var payload = new byte[bom.Length + body.Length];
+        Buffer.BlockCopy(bom, 0, payload, 0, bom.Length);
+        Buffer.BlockCopy(body, 0, payload, bom.Length, body.Length);
+
+        var filename = $"loco-{id}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+        return File(payload, "text/csv", filename);
+    }
+
+    /// <summary>
     /// Получить текущий Health Score с полной расшифровкой компонентов
     /// </summary>
     /// <param name="id">ID локомотива</param>

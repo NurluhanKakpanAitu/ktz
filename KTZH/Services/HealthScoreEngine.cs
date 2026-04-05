@@ -33,6 +33,20 @@ public class HealthScoreEngine
         var grade = ScoreToGrade(score);
         var alerts = BuildAlerts(snapshot, components);
 
+        // Топ-3 компонентов с наименьшим Score
+        var topWorst = components
+            .OrderBy(c => c.Score)
+            .Take(3)
+            .Select(c => new HealthFactor
+            {
+                ParameterName = c.Name,
+                Score = Math.Round(c.Score, 1),
+                CurrentValue = Math.Round(c.RawValue, 2),
+                Unit = c.Unit,
+                Direction = c.Direction
+            })
+            .ToList();
+
         return new HealthScore
         {
             LocomotiveId = snapshot.LocomotiveId,
@@ -40,7 +54,8 @@ public class HealthScoreEngine
             Grade = grade,
             ComponentScores = components.ToDictionary(c => c.Name, c => (int)Math.Round(c.Score)),
             ActiveAlerts = alerts,
-            CalculatedAt = DateTime.UtcNow
+            CalculatedAt = DateTime.UtcNow,
+            TopWorstFactors = topWorst
         };
     }
 
@@ -143,6 +158,8 @@ public class HealthScoreEngine
         return Normalize(name, unit, value, threshold.Warning, threshold.Critical, weight, ascending, normalBound);
     }
 
+    private static string DirectionOf(bool ascending) => ascending ? "above" : "below";
+
     /// <summary>
     /// Нормализация значения в балл 0–100 с плавной градацией по всему диапазону.
     /// ascending=true: значение растёт → хуже (температура, обороты).
@@ -184,9 +201,9 @@ public class HealthScoreEngine
         }
 
         score = Math.Clamp(score, 0, 100);
-        return new ComponentScore(name, unit, value, score, weight);
+        return new ComponentScore(name, unit, value, score, weight, DirectionOf(ascending));
     }
 
     /// <summary>Компонент оценки здоровья</summary>
-    public record ComponentScore(string Name, string Unit, double RawValue, double Score, double Weight);
+    public record ComponentScore(string Name, string Unit, double RawValue, double Score, double Weight, string Direction);
 }

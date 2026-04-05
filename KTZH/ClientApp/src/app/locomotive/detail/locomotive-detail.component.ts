@@ -249,6 +249,23 @@ export class LocomotiveDetailComponent implements OnInit, OnDestroy {
     this.router.navigate(['/']);
   }
 
+  /** Скачать CSV с телеметрией за последние 15 минут */
+  exportCsv(): void {
+    if (!this.id) return;
+    this.api.exportCsv(this.id, 15).subscribe({
+      next: blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        a.href = url;
+        a.download = `loco-${this.id}-${stamp}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: err => console.error('[Export CSV] Ошибка:', err)
+    });
+  }
+
   tabLabel(tab: TabDef): string {
     if (!this.detail) return tab.label;
     if (this.detail.type === 'TE33A') return tab.labelTE || tab.label;

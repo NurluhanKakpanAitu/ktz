@@ -100,9 +100,9 @@ public class TelemetrySimulatorService : BackgroundService
             // Генерируем Alert объекты при пересечении порогов
             GenerateAlerts(snapshot, health);
 
-            // Отправляем в группу конкретного локомотива
+            // Отправляем в группу конкретного локомотива (snapshot + health с top-3 факторами)
             await _hub.Clients.Group($"loco-{state.Locomotive.Id}")
-                .SendAsync("ReceiveTelemetry", snapshot, ct);
+                .SendAsync("ReceiveTelemetry", snapshot, health, ct);
         }
 
         // Сохраняем в SQLite каждые 5 секунд (не каждый тик — снижаем нагрузку на БД)
@@ -135,7 +135,7 @@ public class TelemetrySimulatorService : BackgroundService
                 state.LastHealth = health;
 
                 await _hub.Clients.Group($"loco-{state.Locomotive.Id}")
-                    .SendAsync("ReceiveTelemetry", snapshot, ct);
+                    .SendAsync("ReceiveTelemetry", snapshot, health, ct);
                 count++;
             }
             await Task.Delay(50, ct); // 10 × 50мс = 500мс

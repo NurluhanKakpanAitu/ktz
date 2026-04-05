@@ -39,4 +39,28 @@ public class HealthScore
 
     /// <summary>Метка времени расчёта</summary>
     public DateTime CalculatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Топ-3 параметра с наименьшим вкладом (отсортированы по Score ASC)</summary>
+    public List<HealthFactor> TopWorstFactors { get; set; } = new();
+}
+
+/// <summary>
+/// Фактор Health Score — отдельный параметр с его вкладом в общий балл.
+/// </summary>
+public class HealthFactor
+{
+    /// <summary>Название параметра (на русском)</summary>
+    public string ParameterName { get; set; } = string.Empty;
+
+    /// <summary>Балл параметра 0–100</summary>
+    public double Score { get; set; }
+
+    /// <summary>Текущее сырое значение</summary>
+    public double CurrentValue { get; set; }
+
+    /// <summary>Единица измерения</summary>
+    public string Unit { get; set; } = string.Empty;
+
+    /// <summary>"above" — плохо когда выше; "below" — плохо когда ниже</summary>
+    public string Direction { get; set; } = "above";
 }
